@@ -1,2 +1,2 @@
-# GrammarTemplate
+# grammar-template
 [TODO] grammar-based templating
