@@ -1,2 +1,3 @@
 # grammar-template
-[TODO] grammar-based templating
+
+[IN PROGRESS] grammar-based templating (see for example [here](https://github.com/foo123/Dialect))
