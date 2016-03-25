@@ -3,7 +3,7 @@
 #   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 # 
 #   @version: 1.0.0
-#   https://github.com/foo123/grammar-template
+#   https://github.com/foo123/GrammarTemplate
 #
 ##
 
@@ -15,7 +15,7 @@ def is_array( v ):
 class GrammarTemplate:
     """
     GrammarTemplate for Python,
-    https://github.com/foo123/grammar-template
+    https://github.com/foo123/GrammarTemplate
     """
     
     VERSION = '1.0.0'

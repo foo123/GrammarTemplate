@@ -3,7 +3,7 @@
 *   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 * 
 *   @version: 1.0.0
-*   https://github.com/foo123/grammar-template
+*   https://github.com/foo123/GrammarTemplate
 *
 **/
 !function( root, name, factory ) {
