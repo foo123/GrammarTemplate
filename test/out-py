@@ -1,0 +1,6 @@
+GrammarTemplate.VERSION = 1.0.0
+
+SELECT field1,field2,field3
+FROM tbl1,tbl2
+WHERE field1=1 AND field2=2
+LIMIT 0,5
