@@ -5,6 +5,12 @@
 
 ![GrammarTemplate](/grammartemplate.jpg)
 
+**light-weight (~3.6kB minified, ~1.8kB zipped)**
+
+* `GrammarTemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins)
+
+
+**version 1.0.0** [GrammarTemplate.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.js), [GrammarTemplate.min.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.min.js)
 
 **see also:**  
 
@@ -53,5 +59,7 @@ LIMIT 0,5
 
 ###TODO
 
-* handle nested arguments
+* handle nested arguments (e.g through nested templates)
+* handle sub-templates
 * support some basic and/or user-defined functions
+* handle literal/quoted symbols (so for example grammar-specific delimiters can also be used literaly if quoted, right now delimiters can be adjusted as parameters)
