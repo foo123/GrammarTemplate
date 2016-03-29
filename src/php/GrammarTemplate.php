@@ -188,7 +188,7 @@ class GrammarTemplate
         return $this;
     }
     
-    public function render($args=null)
+    public function parse( )
     {
         if ( false === $this->_parsed )
         {
@@ -196,6 +196,16 @@ class GrammarTemplate
             $this->tpl = self::multisplit( $this->_args[0], $this->_args[1] );
             $this->_args = null;
             $this->_parsed = true;
+        }
+        return $this;
+    }
+    
+    public function render($args=null)
+    {
+        if ( false === $this->_parsed )
+        {
+            // lazy init
+            $this->parse( );
         }
         
         if ( null === $args ) $args = array();

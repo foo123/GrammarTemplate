@@ -168,12 +168,18 @@ class GrammarTemplate:
         self._parsed = None
         return self
     
-    def render(self, args=None):
+    def parse(self):
         if self._parsed is False:
             # lazy init
             self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] )
             self._args = None
             self._parsed = True
+        return self
+    
+    def render(self, args=None):
+        if self._parsed is False:
+            # lazy init
+            self.parse( )
         
         if None == args: args = { }
         tpl = self.tpl

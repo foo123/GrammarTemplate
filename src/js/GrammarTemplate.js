@@ -201,7 +201,7 @@ GrammarTemplate[PROTO] = {
         self._parsed = null;
         return self;
     }
-    ,render: function( args ) {
+    ,parse: function( ) {
         var self = this;
         if ( false === self._parsed )
         {
@@ -209,6 +209,15 @@ GrammarTemplate[PROTO] = {
             self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] );
             self._args = null;
             self._parsed = true;
+        }
+        return self;
+    }
+    ,render: function( args ) {
+        var self = this;
+        if ( false === self._parsed )
+        {
+            // lazy init
+            self.parse( );
         }
         
         args = args || { };
