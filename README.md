@@ -30,6 +30,13 @@
 
 ###API
 
+**Grammar Template**
+
+A block inside `[..]` represents an optional block of `code` (depending on passed parameters) and `<..>` describe placeholders for `query` parameters / variables (i.e `non-terminals`).
+The optional block of code depends on whether **all** optional parameters defined inside (with `<?..>` or `<*..>` for rest parameters) exist. Then, that block (and any nested blocks it might contain) is output, else bypassed.
+
+
+
 ```javascript
 var GrammarTemplate = require("../src/js/GrammarTemplate.js"), echo = console.log;
 
