@@ -53,6 +53,22 @@ echo(sql.render({
 }));
 ```
 
+**input template**
+```text
+SELECT <select_columns>[,<*select_columns>]
+FROM <from_tables>[,<*from_tables>]
+[\n<?join_clauses>[\n<*join_clauses>]]
+[WHERE (<?where_conditions_required>) AND (<?where_conditions>)]
+[WHERE <?where_conditions_required><?!where_conditions>]
+[WHERE <?!where_conditions_required><?where_conditions>]
+[GROUP BY <?group_conditions>[,<*group_conditions>]]
+[HAVING (<?having_conditions_required>) AND (<?having_conditions>)]
+[HAVING <?having_conditions_required><?!having_conditions>]
+[HAVING <?!having_conditions_required><?having_conditions>]
+[ORDER BY <?order_conditions>[,<*order_conditions>]]
+[LIMIT <offset|0>,<?count>]
+```
+
 **output**
 ```text
 GrammarTemplate.VERSION = 1.0.0
