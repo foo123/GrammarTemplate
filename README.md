@@ -5,6 +5,11 @@
 
 ![GrammarTemplate](/grammartemplate.jpg)
 
+
+[Etymology of *"grammar"*](http://www.etymonline.com/index.php?term=grammar)
+[Etymology of *"template"*](http://www.etymonline.com/index.php?term=template)
+
+
 **light-weight (~3.6kB minified, ~1.8kB zipped)**
 
 * `GrammarTemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins)
