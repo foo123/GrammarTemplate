@@ -2,41 +2,53 @@
 *   GrammarTemplate, 
 *   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 * 
-*   @version: 1.0.0
+*   @version: 1.1.0
 *   https://github.com/foo123/GrammarTemplate
 *
 **/
-!function( root, name, factory ) {
+!function( root, name, factory ){
 "use strict";
-var m;
 if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */
-    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory.call( root ));
+    (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));
 else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
-    module.exports = factory.call( root );
-else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */
-    define(name,['require','exports','module'],function( ){return factory.call( root );});
+    (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));
+else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */
+    System.register(name,[],function($__export){$__export(name, factory.call(root));});
+else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */
+    define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
-    (root[ name ] = (m=factory.call( root )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );
+    (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
 }(  /* current root */          this, 
     /* module name */           "GrammarTemplate",
-    /* module factory */        function( exports, undef ) {
+    /* module factory */        function ModuleFactory__GrammarTemplate( undef ){
 "use strict";
 
-var PROTO = 'prototype', HAS = 'hasOwnProperty', 
-    toString = Object[PROTO].toString,
+var PROTO = 'prototype', HAS = 'hasOwnProperty', toString = Object[PROTO].toString,
     CHAR = 'charAt', CHARCODE = 'charCodeAt',
     trim_re = /^\s+|\s+$/g,
     trim = String[PROTO].trim
         ? function( s ){ return s.trim(); }
-        : function( s ){ return s.replace(trim_re, ''); },
-    GrammarTemplate
+        : function( s ){ return s.replace(trim_re, ''); }
 ;
+
 function is_array( o )
 {
     return o instanceof Array || '[object Array]' === toString.call(o);
 }
+function walk( obj, keys )
+{
+    var o = obj, l = keys.length, i = 0, k;
+    while( i < l )
+    {
+        k = keys[i++];
+        if ( o && (null != o[k]) ) o = o[k];
+        else return null;
+    }
+    return o;
+}
 
-GrammarTemplate = function GrammarTemplate( tpl, delims ) {
+function GrammarTemplate( tpl, delims )
+{
     var self = this;
     if ( !(self instanceof GrammarTemplate) ) return new GrammarTemplate(tpl, delims);
     self.id = null;
@@ -45,25 +57,49 @@ GrammarTemplate = function GrammarTemplate( tpl, delims ) {
     self._args = [tpl||'', delims||GrammarTemplate.defaultDelims];
     self._parsed = false;
 };
-GrammarTemplate.VERSION = '1.0.0';
+GrammarTemplate.VERSION = '1.1.0';
 GrammarTemplate.defaultDelims = ['<','>','[',']'/*,'?','*','!','|','{','}'*/];
 GrammarTemplate.multisplit = function multisplit( tpl, delims ) {
     var IDL = delims[0], IDR = delims[1], OBL = delims[2], OBR = delims[3],
         lenIDL = IDL.length, lenIDR = IDR.length, lenOBL = OBL.length, lenOBR = OBR.length,
-        OPT = '?', OPTR = '*', NEG = '!', DEF = '|', REPL = '{', REPR = '}',
-        default_value = null, negative = 0, optional = 0, start_i, end_i,
-        argument, p, stack, c, a, b, s, l = tpl.length, i, j, jl;
-    i = 0; a = [[], null, 0, 0, 0, 0, null]; stack = []; s = '';
+        ESC = '\\', OPT = '?', OPTR = '*', NEG = '!', DEF = '|', REPL = '{', REPR = '}',
+        default_value = null, negative = 0, optional = 0, nested, start_i, end_i,
+        argument, p, stack, c, a, b, s, l = tpl.length, i, j, jl, escaped, ch;
+    
+    i = 0; a = [[], null, null, 0, 0, 0, 0, null]; stack = []; s = ''; escaped = false;
     while( i < l )
     {
+        ch = tpl[CHAR](i);
+        if ( ESC === ch )
+        {
+            escaped = !escaped;
+            i += 1;
+        }
+        
         if ( IDL === tpl.substr(i,lenIDL) )
         {
+            if ( escaped )
+            {
+                s += IDL;
+                i += lenIDL;
+                escaped = false;
+                continue;
+            }
+            
             i += lenIDL;
             if ( s.length ) a[0].push([0, s]);
             s = '';
         }
         else if ( IDR === tpl.substr(i,lenIDR) )
         {
+            if ( escaped )
+            {
+                s += IDR;
+                i += lenIDR;
+                escaped = false;
+                continue;
+            }
+            
             i += lenIDR;
             // argument
             argument = s; s = '';
@@ -132,54 +168,75 @@ GrammarTemplate.multisplit = function multisplit( tpl, delims ) {
                 start_i = 0;
                 end_i = 0;
             }
-            if ( negative && null === default_value ) default_value = '';
+            if ( negative && (null === default_value) ) default_value = '';
             
-            if ( optional && !a[2] )
+            nested = -1 < argument.indexOf('.') ? argument.split('.') : null;
+            
+            if ( optional && !a[3] )
             {
                 a[1] = argument;
-                a[2] = optional;
-                a[3] = negative;
-                a[4] = start_i;
-                a[5] = end_i;
+                a[2] = nested;
+                a[3] = optional;
+                a[4] = negative;
+                a[5] = start_i;
+                a[6] = end_i;
                 // handle multiple optional arguments for same optional block
-                a[6] = [[argument,negative,start_i,end_i]];
+                a[7] = [[argument,negative,start_i,end_i,nested]];
             }
             else if( optional )
             {
                 // handle multiple optional arguments for same optional block
-                a[6].push([argument,negative,start_i,end_i]);
+                a[7].push([argument,negative,start_i,end_i,nested]);
             }
             else if ( !optional && (null === a[1]) )
             {
                 a[1] = argument;
-                a[2] = 0;
-                a[3] = negative;
-                a[4] = start_i;
-                a[5] = end_i;
-                a[6] = [[argument,negative,start_i,end_i]];
+                a[2] = nested;
+                a[3] = 0;
+                a[4] = negative;
+                a[5] = start_i;
+                a[6] = end_i;
+                a[7] = [[argument,negative,start_i,end_i,nested]];
             }
-            a[0].push([1, argument, default_value, optional, negative, start_i, end_i]);
+            a[0].push([1, argument, nested, default_value, optional, negative, start_i, end_i]);
         }
         else if ( OBL === tpl.substr(i,lenOBL) )
         {
+            if ( escaped )
+            {
+                s += OBL;
+                i += lenOBL;
+                escaped = false;
+                continue;
+            }
+            
             i += lenOBL;
             // optional block
             if ( s.length ) a[0].push([0, s]);
             s = '';
             stack.push(a);
-            a = [[], null, 0, 0, 0, 0, null];
+            a = [[], null, null, 0, 0, 0, 0, null];
         }
         else if ( OBR === tpl.substr(i,lenOBR) )
         {
+            if ( escaped )
+            {
+                s += OBR;
+                i += lenOBR;
+                escaped = false;
+                continue;
+            }
+            
             i += lenOBR;
             b = a; a = stack.pop( );
             if ( s.length ) b[0].push([0, s]);
             s = '';
-            a[0].push([-1, b[1], b[2], b[3], b[4], b[5], b[6], b[0]]);
+            a[0].push([-1, b[1], b[2], b[3], b[4], b[5], b[6], b[7], b[0]]);
         }
         else
         {
-            s += tpl[CHAR](i++);
+            if ( ESC === ch ) s += ch;
+            else s += tpl[CHAR](i++);
         }
     }
     if ( s.length ) a[0].push([0, s]);
@@ -206,9 +263,9 @@ GrammarTemplate[PROTO] = {
         if ( false === self._parsed )
         {
             // lazy init
+            self._parsed = true;
             self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] );
             self._args = null;
-            self._parsed = true;
         }
         return self;
     }
@@ -222,17 +279,19 @@ GrammarTemplate[PROTO] = {
         
         args = args || { };
         var tpl = self.tpl, l = tpl.length,
-            stack = [], p, arr, MIN = Math.min,
+            p, arr, MIN = Math.min,
             i, t, tt, s, rarg = null,
             ri = 0, rs, re, out = '',
-            opts_vars, render, oi, ol, opt_v
+            opts_vars, render, oi, ol, opt_v, opt_arg,
+            // pre-allocate stack for efficiency
+            stack = new Array(200), slen = 0
         ;
         i = 0;
-        while ( i < l || stack.length )
+        while ( i < l || slen )
         {
             if ( i >= l )
             {
-                p = stack.pop( );
+                p = stack[--slen];
                 tpl = p[0]; i = p[1]; l = p[2];
                 rarg = p[3]||null; ri = p[4]||0;
                 continue;
@@ -242,15 +301,16 @@ GrammarTemplate[PROTO] = {
             if ( -1 === tt )
             {
                 // optional block
-                opts_vars = t[ 6 ];
-                if ( !!opts_vars && opts_vars.length )
+                opts_vars = t[ 7 ];
+                if ( opts_vars && opts_vars.length )
                 {
                     render = true;
                     for(oi=0,ol=opts_vars.length; oi<ol; oi++)
                     {
                         opt_v = opts_vars[oi];
-                        if ( (0 === opt_v[1] && !args[HAS](opt_v[0])) ||
-                            (1 === opt_v[1] && args[HAS](opt_v[0]))
+                        opt_arg = opt_v[4] ? walk( args, opt_v[4] ) : args[opt_v[0]];
+                        if ( (0 === opt_v[1] && null == opt_arg/*!args[HAS](opt_v[0])*/) ||
+                            (1 === opt_v[1] && null != opt_arg/*args[HAS](opt_v[0])*/)
                         )
                         {
                             render = false;
@@ -259,34 +319,35 @@ GrammarTemplate[PROTO] = {
                     }
                     if ( render )
                     {
-                        if ( 1 === t[ 3 ] )
+                        if ( 1 === t[ 4 ] )
                         {
-                            stack.push([tpl, i+1, l, rarg, ri]);
-                            tpl = t[ 7 ]; i = 0; l = tpl.length;
+                            stack[slen++] = [tpl, i+1, l, rarg, ri];
+                            tpl = t[ 8 ]; i = 0; l = tpl.length;
                             rarg = null; ri = 0;
                             continue;
                         }
                         else
                         {
-                            arr = is_array( args[s] );
-                            if ( arr && (t[4] !== t[5]) && args[s].length > t[ 4 ] )
+                            opt_arg = t[2] ? walk( args, t[2] )/*nested key*/ : args[s]/*plain key*/;
+                            arr = is_array( opt_arg );
+                            if ( arr && (t[5] !== t[6]) && opt_arg.length > t[ 5 ] )
                             {
-                                rs = t[ 4 ];
-                                re = -1 === t[ 5 ] ? args[s].length-1 : MIN(t[ 5 ], args[s].length-1);
+                                rs = t[ 5 ];
+                                re = -1 === t[ 6 ] ? opt_arg.length-1 : MIN(t[ 6 ], opt_arg.length-1);
                                 if ( re >= rs )
                                 {
-                                    stack.push([tpl, i+1, l, rarg, ri]);
-                                    tpl = t[ 7 ]; i = 0; l = tpl.length;
+                                    stack[slen++] = [tpl, i+1, l, rarg, ri];
+                                    tpl = t[ 8 ]; i = 0; l = tpl.length;
                                     rarg = s;
-                                    for(ri=re; ri>rs; ri--) stack.push([tpl, 0, l, rarg, ri]);
+                                    for(ri=re; ri>rs; ri--) stack[slen++] = [tpl, 0, l, rarg, ri];
                                     ri = rs;
                                     continue;
                                 }
                             }
-                            else if ( !arr && (t[4] === t[5]) )
+                            else if ( !arr && (t[5] === t[6]) )
                             {
-                                stack.push([tpl, i+1, l, rarg, ri]);
-                                tpl = t[ 7 ]; i = 0; l = tpl.length;
+                                stack[slen++] = [tpl, i+1, l, rarg, ri];
+                                tpl = t[ 8 ]; i = 0; l = tpl.length;
                                 rarg = s; ri = 0;
                                 continue;
                             }
@@ -296,15 +357,15 @@ GrammarTemplate[PROTO] = {
             }
             else if ( 1 === tt )
             {
-                //TODO: handle nested/structured/deep arguments
                 // default value if missing
-                out += !args[HAS](s) && null !== t[ 2 ]
-                    ? t[ 2 ]
-                    : (is_array(args[ s ])
+                opt_arg = t[2] ? walk( args, t[2] )/*nested key*/ : args[s]/*plain key*/;
+                out += (null == opt_arg/*!args[HAS](s)*/) && (null !== t[ 3 ])
+                    ? t[ 3 ]
+                    : (is_array(opt_arg)
                     ? (s === rarg
-                    ? args[s][t[5]===t[6]?t[5]:ri]
-                    : args[s][t[5]])
-                    : args[s])
+                    ? opt_arg[t[6]===t[7]?t[6]:ri]
+                    : opt_arg[t[6]])
+                    : opt_arg)
                 ;
             }
             else /*if ( 0 === tt )*/
@@ -312,12 +373,6 @@ GrammarTemplate[PROTO] = {
                 out += s;
             }
             i++;
-            /*if ( i >= l && stack.length )
-            {
-                p = stack.pop( );
-                tpl = p[0]; i = p[1]; l = p[2];
-                rarg = p[3]||null; ri = p[4]||0;
-            }*/
         }
         return out;
     }

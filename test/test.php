@@ -8,11 +8,19 @@ function echo_($s='')
 echo_('GrammarTemplate.VERSION = ' . GrammarTemplate::VERSION);
 echo_();
 
-$sql = new GrammarTemplate("SELECT <select_columns>[,<*select_columns>]\nFROM <from_tables>[,<*from_tables>][\n<?join_clauses>[\n<*join_clauses>]][\nWHERE (<?where_conditions_required>) AND (<?where_conditions>)][\nWHERE <?where_conditions_required><?!where_conditions>][\nWHERE <?!where_conditions_required><?where_conditions>][\nGROUP BY <?group_conditions>[,<*group_conditions>]][\nHAVING (<?having_conditions_required>) AND (<?having_conditions>)][\nHAVING <?having_conditions_required><?!having_conditions>][\nHAVING <?!having_conditions_required><?having_conditions>][\nORDER BY <?order_conditions>[,<*order_conditions>]][\nLIMIT <offset|0>,<?count>]");
+$tpl = "SELECT <column.select>[, <*column.select>]\nFROM <table.from>[, <*table.from>][\nWHERE (<?required.where>) AND (<?condition.where>)][\nWHERE <?required.where><?!condition.where>][\nWHERE <?!required.where><?condition.where>][\nGROUP BY <?group>[, <*group>]][\nHAVING (<?required.having>) AND (<?condition.having>)][\nHAVING <?required_.having><?!condition.having>][\nHAVING <?!required.having><?condition.having>][\nORDER BY <?order>[, <*order>]][\nLIMIT <offset|0>, <?count>]";
 
+$sql = new GrammarTemplate($tpl);
+
+echo_("input template:");
+echo_($tpl);
+
+echo_( );
+
+echo_("output:");
 echo_($sql->render(array(
-    'select_columns'=>array('field1','field2','field3'),
-    'from_tables'=>array('tbl1','tbl2'),
-    'where_conditions'=> 'field1=1 AND field2=2',
-    'count'=> 5
+    'column'      => array( 'select' => array( 'field1', 'field2', 'field3', 'field4' ) ),
+    'table'       => array( 'from' => array( 'tbl1', 'tbl2' ) ),
+    'condition'   => array( 'where' => 'field1=1 AND field2=2', 'having' => 'field3=1 OR field4=2' ),
+    'count'       => 5
 )));

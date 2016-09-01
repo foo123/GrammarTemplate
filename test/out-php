@@ -1,6 +1,21 @@
-GrammarTemplate.VERSION = 1.0.0
+GrammarTemplate.VERSION = 1.1.0
 
-SELECT field1,field2,field3
-FROM tbl1,tbl2
+input template:
+SELECT <column.select>[, <*column.select>]
+FROM <table.from>[, <*table.from>][
+WHERE (<?required.where>) AND (<?condition.where>)][
+WHERE <?required.where><?!condition.where>][
+WHERE <?!required.where><?condition.where>][
+GROUP BY <?group>[, <*group>]][
+HAVING (<?required.having>) AND (<?condition.having>)][
+HAVING <?required_.having><?!condition.having>][
+HAVING <?!required.having><?condition.having>][
+ORDER BY <?order>[, <*order>]][
+LIMIT <offset|0>, <?count>]
+
+output:
+SELECT field1, field2, field3, field4
+FROM tbl1, tbl2
 WHERE field1=1 AND field2=2
-LIMIT 0,5
+HAVING field3=1 OR field4=2
+LIMIT 0, 5
