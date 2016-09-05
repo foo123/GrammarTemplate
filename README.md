@@ -168,6 +168,13 @@ echo(expr.render({
             {lhs: 2, op: '>', rhs: 2},
             // factor
             {lhs: 2, op: '>', rhs: 3}
+        ],
+        // term
+        [
+            // factor
+            {lhs: 3},
+            // factor
+            {lhs: 3, op: '!='}
         ]
     ]
 }));
@@ -183,7 +190,7 @@ input template:
 
 output:
 (1 = 1 AND 1 = 2 AND 1 = 3) OR (1 < 1 AND 1 < 2 AND 1 < 3) OR (1 > 1 AND 1 > 2 AND 1 > 3)
-(2 = 1 AND 2 = 2 AND 2 = 3) OR (2 < 1 AND 2 < 2 AND 2 < 3) OR (2 > 1 AND 2 > 2 AND 2 > 3)
+(2 = 1 AND 2 = 2 AND 2 = 3) OR (2 < 1 AND 2 < 2 AND 2 < 3) OR (2 > 1 AND 2 > 2 AND 2 > 3) OR (3 AND 3 != NULL)
 ```
 
 ###TODO
