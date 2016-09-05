@@ -1,4 +1,4 @@
-GrammarTemplate.VERSION = 1.1.0
+GrammarTemplate.VERSION = 2.0.0
 
 input template:
 SELECT <column.select>[, <*column.select>]
@@ -8,7 +8,7 @@ WHERE <?required.where><?!condition.where>][
 WHERE <?!required.where><?condition.where>][
 GROUP BY <?group>[, <*group>]][
 HAVING (<?required.having>) AND (<?condition.having>)][
-HAVING <?required_.having><?!condition.having>][
+HAVING <?required.having><?!condition.having>][
 HAVING <?!required.having><?condition.having>][
 ORDER BY <?order>[, <*order>]][
 LIMIT <offset|0>, <?count>]

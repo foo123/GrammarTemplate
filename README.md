@@ -10,12 +10,12 @@
 [Etymology of *"template"*](http://www.etymonline.com/index.php?term=template)
 
 
-**light-weight (~4.2kB minified, ~1.8kB zipped)**
+**light-weight (~5.5kB minified, ~2.4kB zipped)**
 
 * `GrammarTemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins)
 
 
-**version 1.1.0** [GrammarTemplate.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.js), [GrammarTemplate.min.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.min.js)
+**version 2.0.0** [GrammarTemplate.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.js), [GrammarTemplate.min.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.min.js)
 
 **see also:**  
 
@@ -41,6 +41,7 @@
 A block inside `[..]` represents an optional block of `code` (depending on passed parameters) and `<..>` describe placeholders for `query` parameters / variables (i.e `non-terminals`).
 The optional block of code depends on whether **all** optional parameters defined inside (with `<?..>`, `<?!..>` or `<*..>` for rest parameters) exist. Then, that block (and any nested blocks it might contain) is output, else bypassed.
 
+A block defined with `:=[..]` represents a (recursive) sub-template, which can be used to render any deep/structured argument a needed (see below).
 
 
 ```javascript
@@ -69,7 +70,7 @@ echo(sql.render({
 
 **output**
 ```text
-GrammarTemplate.VERSION = 1.1.0
+GrammarTemplate.VERSION = 2.0.0
 
 input template:
 SELECT <column.select>[, <*column.select>]
@@ -93,9 +94,101 @@ LIMIT 0, 5
 
 ```
 
+```javascript
+var GrammarTemplate = require("../src/js/GrammarTemplate.js"), echo = console.log;
+
+echo('GrammarTemplate.VERSION = ' + GrammarTemplate.VERSION);
+echo( );
+
+// foreach expression as term: foreach term as factor: ..
+var tpl = "<:expression_tpl>:=[<term>:=[(<factor>:=[<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:expression_tpl>\n<expression2:expression_tpl>";
+
+var expr = new GrammarTemplate( tpl );
+
+echo("input template:");
+echo(tpl);
+
+echo( );
+
+echo("output:");
+echo(expr.render({
+    expression  : [
+        // term
+        [
+            // factor
+            {lhs: 1, op: '=', rhs: 1},
+            // factor
+            {lhs: 1, op: '=', rhs: 2},
+            // factor
+            {lhs: 1, op: '=', rhs: 3}
+        ],
+        // term
+        [
+            // factor
+            {lhs: 1, op: '<', rhs: 1},
+            // factor
+            {lhs: 1, op: '<', rhs: 2},
+            // factor
+            {lhs: 1, op: '<', rhs: 3}
+        ],
+        // term
+        [
+            // factor
+            {lhs: 1, op: '>', rhs: 1},
+            // factor
+            {lhs: 1, op: '>', rhs: 2},
+            // factor
+            {lhs: 1, op: '>', rhs: 3}
+        ]
+    ],
+    expression2  : [
+        // term
+        [
+            // factor
+            {lhs: 2, op: '=', rhs: 1},
+            // factor
+            {lhs: 2, op: '=', rhs: 2},
+            // factor
+            {lhs: 2, op: '=', rhs: 3}
+        ],
+        // term
+        [
+            // factor
+            {lhs: 2, op: '<', rhs: 1},
+            // factor
+            {lhs: 2, op: '<', rhs: 2},
+            // factor
+            {lhs: 2, op: '<', rhs: 3}
+        ],
+        // term
+        [
+            // factor
+            {lhs: 2, op: '>', rhs: 1},
+            // factor
+            {lhs: 2, op: '>', rhs: 2},
+            // factor
+            {lhs: 2, op: '>', rhs: 3}
+        ]
+    ]
+}));
+```
+**output**
+```text
+GrammarTemplate.VERSION = 2.0.0
+
+input template:
+<:expression_tpl>:=[<term>:=[(<factor>:=[<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]
+<expression:expression_tpl>
+<expression2:expression_tpl>
+
+output:
+(1 = 1 AND 1 = 2 AND 1 = 3) OR (1 < 1 AND 1 < 2 AND 1 < 3) OR (1 > 1 AND 1 > 2 AND 1 > 3)
+(2 = 1 AND 2 = 2 AND 2 = 3) OR (2 < 1 AND 2 < 2 AND 2 < 3) OR (2 > 1 AND 2 > 2 AND 2 > 3)
+```
+
 ###TODO
 
 * handle literal symbols (so for example grammar-specific delimiters can also be used literaly, right now delimiters can be adjusted as parameters) [DONE, through escaping]
 * handle nested/deep arguments [DONE, through nested object-dot notation]
-* handle sub-templates
+* handle recursion/loop deep structured arguments and sub-templates [DONE, through defining recursive sub-templates for rendering any deep argument]
 * support some basic and/or user-defined functions
