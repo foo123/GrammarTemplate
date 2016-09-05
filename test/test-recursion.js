@@ -71,6 +71,13 @@ echo(expr.render({
             {lhs: 2, op: '>', rhs: 2},
             // factor
             {lhs: 2, op: '>', rhs: 3}
+        ],
+        // term
+        [
+            // factor
+            {lhs: 3},
+            // factor
+            {lhs: 3, op: '!='}
         ]
     ]
 }));

@@ -430,9 +430,9 @@ function non_terminal( SUB, args, symbol, index )
         {
             opt_arg = args[symbol.name]/*plain key*/;
         }
-        if ( is_array(opt_arg) )
+        if ( null != index && is_array(opt_arg) )
         {
-            opt_arg = null != index ? opt_arg[index] : opt_arg/*[symbol.start]*/;
+            opt_arg = opt_arg[index];
         }
         if ( (null == opt_arg) && (null !== symbol.dval) )
         {
@@ -445,8 +445,10 @@ function non_terminal( SUB, args, symbol, index )
             tpl = SUB[symbol.stpl].node; tpl_args = {};
             if ( null != opt_arg )
             {
-                if ( opt_arg[HAS](tpl.name) && !opt_arg[HAS](symbol.name) ) tpl_args = opt_arg;
-                else tpl_args[tpl.name] = opt_arg;
+                /*if ( opt_arg[HAS](tpl.name) && !opt_arg[HAS](symbol.name) ) tpl_args = opt_arg;
+                else tpl_args[tpl.name] = opt_arg;*/
+                if ( is_array(opt_arg) ) tpl_args[tpl.name] = opt_arg;
+                else tpl_args = opt_arg;
             }
             out = optional_block( SUB, tpl_args, tpl, null );
         }
@@ -468,7 +470,7 @@ function non_terminal( SUB, args, symbol, index )
         {
             opt_arg = null != index ? opt_arg[index] : opt_arg[symbol.start];
         }
-        out = (null == opt_arg) && (null !== symbol.dval) ? symbol.dval : opt_arg;
+        out = (null == opt_arg) && (null !== symbol.dval) ? symbol.dval : String(opt_arg);
     }
     return out;
 }

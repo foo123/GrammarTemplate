@@ -191,4 +191,5 @@ output:
 * handle literal symbols (so for example grammar-specific delimiters can also be used literaly, right now delimiters can be adjusted as parameters) [DONE, through escaping]
 * handle nested/deep arguments [DONE, through nested object-dot notation]
 * handle recursion/loop deep structured arguments and sub-templates [DONE, through defining recursive sub-templates for rendering any deep argument]
+* optimise parsing and rendering [DONE]
 * support some basic and/or user-defined functions

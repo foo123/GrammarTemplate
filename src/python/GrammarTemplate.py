@@ -381,8 +381,8 @@ def non_terminal( SUB, args, symbol, index=None ):
         else:
             opt_arg = walk( args, [symbol['name']] )
         
-        if is_array(opt_arg):
-            opt_arg = opt_arg[index] if index is not None else opt_arg#[symbol.start]
+        if (index is not None) and is_array(opt_arg):
+            opt_arg = opt_arg[index]
         
         if (opt_arg is None) and (symbol['dval'] is not None):
             # default value if missing
@@ -392,8 +392,10 @@ def non_terminal( SUB, args, symbol, index=None ):
             tpl = SUB[symbol['stpl']].node
             tpl_args = {}
             if opt_arg is not None:
-                if (tpl['name'] in opt_arg) and (symbol['name'] not in opt_arg): tpl_args = opt_arg
-                else: tpl_args[tpl['name']] = opt_arg
+                #if (tpl['name'] in opt_arg) and (symbol['name'] not in opt_arg): tpl_args = opt_arg
+                #else: tpl_args[tpl['name']] = opt_arg
+                if is_array(opt_arg): tpl_args[tpl['name']] = opt_arg
+                else: tpl_args = opt_arg
             out = optional_block( SUB, tpl_args, tpl, None )
     else:
         # plain symbol argument

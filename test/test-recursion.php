@@ -76,6 +76,13 @@ echo_($expr->render(array(
             array('lhs'=> 2, 'op'=> '>', 'rhs'=> 2),
             // factor
             array('lhs'=> 2, 'op'=> '>', 'rhs'=> 3)
+        ),
+        // term
+        array(
+            // factor
+            array('lhs'=> 3),
+            // factor
+            array('lhs'=> 3, 'op'=> '!=')
         )
     )
 )));

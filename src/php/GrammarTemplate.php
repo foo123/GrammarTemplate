@@ -45,6 +45,16 @@ class GrammarTemplate
         return 'grtpl--'.time().'--'.(++self::$TPL_ID);
     }
     
+    private static function is_array( $a )
+    {
+        if ( (null != $a) && is_array( $a ) )
+        {
+            $array_keys = array_keys( $a );
+            return !empty($array_keys) && (array_keys($array_keys) === $array_keys);
+        }
+        return false;
+    }
+    
     private static function walk( $obj, $keys )
     {
         $o = $obj; $l = count($keys); $i = 0;
@@ -391,9 +401,7 @@ class GrammarTemplate
             {
                 $opt_v = $opt_vars->value;
                 $opt_arg = self::walk( $args, $opt_v[1] ? $opt_v[1] : array($opt_v[0]) );
-                if ( (0 === $opt_v[2] && null === $opt_arg) ||
-                    (1 === $opt_v[2] && null !== $opt_arg)
-                )  return '';
+                if ( (0 === $opt_v[2] && null === $opt_arg) || (1 === $opt_v[2] && null !== $opt_arg) )  return '';
                 $opt_vars = $opt_vars->prev;
             }
         }
@@ -401,13 +409,13 @@ class GrammarTemplate
         if ( $block->key )
         {
             $opt_arg = self::walk( $args, $block->key )/*nested key*/;
-            if ( (null == $opt_arg) && isset($args[$block->name]) ) $opt_arg = $args[$block->name];
+            if ( (null === $opt_arg) && isset($args[$block->name]) ) $opt_arg = $args[$block->name];
         }
         else
         {
             $opt_arg = self::walk( $args, array($block->name) )/*plain key*/;
         }
-        $arr = is_array( $opt_arg ); $len = $arr ? count($opt_arg) : -1;
+        $arr = self::is_array( $opt_arg ); $len = $arr ? count($opt_arg) : -1;
         if ( $arr && ($len > $block->start) )
         {
             for($rs=$block->start,$re=(-1===$block->end?$len-1:min($block->end, $len-1)),$ri=$rs; $ri<=$re; $ri++)
@@ -428,17 +436,17 @@ class GrammarTemplate
             if ( $symbol->key )
             {
                 $opt_arg = self::walk( $args, $symbol->key )/*nested key*/;
-                if ( (null == $opt_arg) && isset($args[$symbol->name]) ) $opt_arg = $args[$symbol->name];
+                if ( (null === $opt_arg) && isset($args[$symbol->name]) ) $opt_arg = $args[$symbol->name];
             }
             else
             {
                 $opt_arg = self::walk( $args, array($symbol->name) )/*plain key*/;
             }
-            if ( is_array($opt_arg) )
+            if ( (null !== $index) && self::is_array($opt_arg) )
             {
-                $opt_arg = null !== $index ? $opt_arg[$index] : $opt_arg/*[symbol.start]*/;
+                $opt_arg = count($opt_arg) > $index ? $opt_arg[$index] : null;
             }
-            if ( (null == $opt_arg) && (null !== $symbol->dval) )
+            if ( (null === $opt_arg) && (null !== $symbol->dval) )
             {
                 // default value if missing
                 $out = $symbol->dval;
@@ -447,10 +455,12 @@ class GrammarTemplate
             {
                 // try to associate sub-template parameters to actual input arguments
                 $tpl = $SUB[$symbol->stpl]->node; $tpl_args = array();
-                if ( null != $opt_arg )
+                if ( null !== $opt_arg )
                 {
-                    if ( isset($opt_arg[$tpl->name]) && !isset($opt_arg[$symbol->name]) ) $tpl_args = $opt_arg;
-                    else $tpl_args[$tpl->name] = $opt_arg;
+                    /*if ( isset($opt_arg[$tpl->name]) && !isset($opt_arg[$symbol->name]) ) $tpl_args = $opt_arg;
+                    else $tpl_args[$tpl->name] = $opt_arg;*/
+                    if ( self::is_array($opt_arg) ) $tpl_args[$tpl->name] = $opt_arg;
+                    else $tpl_args = $opt_arg;
                 }
                 $out = self::optional_block( $SUB, $tpl_args, $tpl, null );
             }
@@ -468,9 +478,10 @@ class GrammarTemplate
                 $opt_arg = self::walk( $args, array($symbol->name) )/*plain key*/;
             }
             // default value if missing
-            if ( is_array($opt_arg) )
+            if ( self::is_array($opt_arg) )
             {
-                $opt_arg = null !== $index ? $opt_arg[$index] : $opt_arg[$symbol->start];
+                $index = null !== $index ? $index : $symbol->start;
+                $opt_arg = count($opt_arg) > $index ? $opt_arg[$index] : null;
             }
             $out = (null === $opt_arg) && (null !== $symbol->dval) ? $symbol->dval : strval($opt_arg);
         }
