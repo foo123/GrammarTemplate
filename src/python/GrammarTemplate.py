@@ -8,11 +8,12 @@
 ##
 
 import time
-TPL_ID = 0
+
+GUID = 0
 def guid( ):
-    global TPL_ID
-    TPL_ID += 1
-    return 'grtpl--'+str(int(time.time()))+'--'+str(TPL_ID)
+    global GUID
+    GUID += 1
+    return str(int(time.time()))+'--'+str(GUID)
 
 def is_array( v ):
     return isinstance(v, (list,tuple))
@@ -196,7 +197,7 @@ def multisplit( tpl, delims ):
             if TPL+OBL == tpl[i:i+lenTPL+lenOBL]:
                 # template definition
                 i += lenTPL
-                template = template if template and len(template) else guid()
+                template = template if template and len(template) else 'grtpl--'+guid()
                 start_tpl = template
                 if cur_tpl and len(argument):
                     arg_tpl[cur_tpl][argument] = template
@@ -431,6 +432,7 @@ class GrammarTemplate:
 
     #defaultDelims = ['<','>','[',']',':=','?','*','!','|','{','}']
     defaultDelims = ['<','>','[',']',':=']
+    guid = guid
     multisplit = multisplit
     main = main
     

@@ -29,12 +29,11 @@ var PROTO = 'prototype', HAS = 'hasOwnProperty', toString = Object[PROTO].toStri
     trim = String[PROTO].trim
         ? function( s ){ return s.trim(); }
         : function( s ){ return s.replace(trim_re, ''); },
-    TPL_ID = 0
-;
+    GUID = 0;
 
 function guid( )
 {
-    return 'grtpl--'+new Date().getTime()+'--'+(++TPL_ID);
+    return ''+new Date().getTime()+'--'+(++GUID);
 }
 function is_array( o )
 {
@@ -211,7 +210,7 @@ function multisplit( tpl, delims )
             {
                 // template definition
                 i += lenTPL;
-                template = template&&template.length ? template : guid( );
+                template = template&&template.length ? template : 'grtpl--'+guid( );
                 start_tpl = template;
                 if ( cur_tpl && argument.length)
                     arg_tpl[cur_tpl][argument] = template;
@@ -504,6 +503,7 @@ function GrammarTemplate( tpl, delims )
 };
 GrammarTemplate.VERSION = '2.0.0';
 GrammarTemplate.defaultDelims = ['<','>','[',']',':='/*,'?','*','!','|','{','}'*/];
+GrammarTemplate.guid = guid;
 GrammarTemplate.multisplit = multisplit;
 GrammarTemplate.main = main;
 GrammarTemplate[PROTO] = {
