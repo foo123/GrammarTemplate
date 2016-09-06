@@ -8,8 +8,26 @@ function echo_($s='')
 echo_('GrammarTemplate.VERSION = ' . GrammarTemplate::VERSION);
 echo_();
 
-// foreach expression as term: foreach term as factor: ..
-$tpl = "<:expression_tpl>:=[<term>:=[(<factor>:=[<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:expression_tpl>\n<expression2:expression_tpl>";
+/*
+    i.e: 
+    foreach "expression:terms" as "term":
+        foreach "term:factors" as "factor":
+            ..
+    
+    here an :EXPR template is defined which itself uses (anonymous) sub-templates
+    it is equivalent to (expand sub-templates to distinct):
+
+<:FACTOR>:=[<lhs>[ <?op> <rhs|NULL>]]
+
+<:TERM>:=[(<factor:FACTOR>[ AND <*factor:FACTOR>])]
+
+<:EXPR>:=[<term:TERM>[ OR <*term:TERM>]]
+
+<expression:EXPR>
+<expression2:EXPR>
+
+*/
+$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
 
 $expr = new GrammarTemplate($tpl);
 
