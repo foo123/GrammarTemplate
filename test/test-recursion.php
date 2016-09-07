@@ -27,7 +27,7 @@ echo_();
 <expression2:EXPR>
 
 */
-$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
+$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalFlag> ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
 
 $expr = new GrammarTemplate($tpl);
 
@@ -37,70 +37,71 @@ echo_($tpl);
 echo_( );
 
 echo_("output:");
-echo_($expr->render(array(
+echo_($expr->render((object)array(
+    'globalFlag'  => 'NOT',
     'expression'  => array(
         // term
         array(
             // factor
-            array('lhs'=> 1, 'op'=> '=', 'rhs'=> 1),
+            (object)array('lhs'=> 1, 'op'=> '=', 'rhs'=> 1),
             // factor
-            array('lhs'=> 1, 'op'=> '=', 'rhs'=> 2),
+            (object)array('lhs'=> 1, 'op'=> '=', 'rhs'=> 2),
             // factor
-            array('lhs'=> 1, 'op'=> '=', 'rhs'=> 3)
+            (object)array('lhs'=> 1, 'op'=> '=', 'rhs'=> 3)
         ),
         // term
         array(
             // factor
-            array('lhs'=> 1, 'op'=> '<', 'rhs'=> 1),
+            (object)array('lhs'=> 1, 'op'=> '<', 'rhs'=> 1),
             // factor
-            array('lhs'=> 1, 'op'=> '<', 'rhs'=> 2),
+            (object)array('lhs'=> 1, 'op'=> '<', 'rhs'=> 2),
             // factor
-            array('lhs'=> 1, 'op'=> '<', 'rhs'=> 3)
+            (object)array('lhs'=> 1, 'op'=> '<', 'rhs'=> 3)
         ),
         // term
         array(
             // factor
-            array('lhs'=> 1, 'op'=> '>', 'rhs'=> 1),
+            (object)array('lhs'=> 1, 'op'=> '>', 'rhs'=> 1),
             // factor
-            array('lhs'=> 1, 'op'=> '>', 'rhs'=> 2),
+            (object)array('lhs'=> 1, 'op'=> '>', 'rhs'=> 2),
             // factor
-            array('lhs'=> 1, 'op'=> '>', 'rhs'=> 3)
+            (object)array('lhs'=> 1, 'op'=> '>', 'rhs'=> 3)
         )
     ),
     'expression2'  => array(
         // term
         array(
             // factor
-            array('lhs'=> 2, 'op'=> '=', 'rhs'=> 1),
+            (object)array('lhs'=> 2, 'op'=> '=', 'rhs'=> 1),
             // factor
-            array('lhs'=> 2, 'op'=> '=', 'rhs'=> 2),
+            (object)array('lhs'=> 2, 'op'=> '=', 'rhs'=> 2),
             // factor
-            array('lhs'=> 2, 'op'=> '=', 'rhs'=> 3)
+            (object)array('lhs'=> 2, 'op'=> '=', 'rhs'=> 3)
         ),
         // term
         array(
             // factor
-            array('lhs'=> 2, 'op'=> '<', 'rhs'=> 1),
+            (object)array('lhs'=> 2, 'op'=> '<', 'rhs'=> 1),
             // factor
-            array('lhs'=> 2, 'op'=> '<', 'rhs'=> 2),
+            (object)array('lhs'=> 2, 'op'=> '<', 'rhs'=> 2),
             // factor
-            array('lhs'=> 2, 'op'=> '<', 'rhs'=> 3)
+            (object)array('lhs'=> 2, 'op'=> '<', 'rhs'=> 3)
         ),
         // term
         array(
             // factor
-            array('lhs'=> 2, 'op'=> '>', 'rhs'=> 1),
+            (object)array('lhs'=> 2, 'op'=> '>', 'rhs'=> 1),
             // factor
-            array('lhs'=> 2, 'op'=> '>', 'rhs'=> 2),
+            (object)array('lhs'=> 2, 'op'=> '>', 'rhs'=> 2),
             // factor
-            array('lhs'=> 2, 'op'=> '>', 'rhs'=> 3)
+            (object)array('lhs'=> 2, 'op'=> '>', 'rhs'=> 3)
         ),
         // term
         array(
             // factor
-            array('lhs'=> 3),
+            (object)array('lhs'=> 3),
             // factor
-            array('lhs'=> 3, 'op'=> '!=')
+            (object)array('lhs'=> 3, 'op'=> '!=')
         )
     )
 )));
