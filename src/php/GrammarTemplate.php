@@ -3,7 +3,7 @@
 *   GrammarTemplate, 
 *   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 * 
-*   @version: 2.0.0
+*   @version: 2.0.1
 *   https://github.com/foo123/GrammarTemplate
 *
 **/
@@ -37,7 +37,7 @@ class GrammarTemplate__TplEntry
 
 class GrammarTemplate
 {    
-    const VERSION = '2.0.0';
+    const VERSION = '2.0.1';
     private static $GUID = 0;
     
     private static function guid( )
@@ -390,6 +390,7 @@ class GrammarTemplate
                     'key'     => $nested,
                     'stpl'    => $template,
                     'dval'    => $default_value,
+                    'opt'     => $optional,
                     'start'   => $start_i,
                     'end'     => $end_i
                 ), $a);
@@ -573,6 +574,11 @@ class GrammarTemplate
                 }
                 $out = self::optional_block( $tpl_args, $tpl, $SUB, null, null === $orig_args ? $args : $orig_args );
             }
+        }
+        elseif ( $symbol->opt && (null !== $symbol->dval) )
+        {
+            // boolean optional argument
+            $out = $symbol->dval;
         }
         else
         {

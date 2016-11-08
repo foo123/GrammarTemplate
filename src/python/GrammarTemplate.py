@@ -2,7 +2,7 @@
 #   GrammarTemplate, 
 #   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 # 
-#   @version: 2.0.0
+#   @version: 2.0.1
 #   https://github.com/foo123/GrammarTemplate
 #
 ##
@@ -314,6 +314,7 @@ def multisplit( tpl, delims ):
                 'key'     : nested,
                 'stpl'    : template,
                 'dval'    : default_value,
+                'opt'     : optional,
                 'start'   : start_i,
                 'end'     : end_i
             }, a)
@@ -467,6 +468,9 @@ def non_terminal( args, symbol, SUB=None, index=None, orig_args=None ):
                 if is_array(opt_arg): tpl_args[tpl['name']] = opt_arg
                 else: tpl_args = opt_arg
             out = optional_block( tpl_args, tpl, SUB, None, args if orig_args is None else orig_args )
+    elif symbol['opt'] and (symbol['dval'] is not None):
+        # boolean optional argument
+        out = symbol['dval']
     else:
         # plain symbol argument
         opt_arg = walk( args, symbol['key'], [symbol['name']], orig_args )
@@ -494,7 +498,7 @@ class GrammarTemplate:
     https://github.com/foo123/GrammarTemplate
     """
     
-    VERSION = '2.0.0'
+    VERSION = '2.0.1'
     
 
     #defaultDelims = ['<','>','[',']',':=','?','*','!','|','{','}']

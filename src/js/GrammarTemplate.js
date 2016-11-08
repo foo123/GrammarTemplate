@@ -2,7 +2,7 @@
 *   GrammarTemplate, 
 *   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 * 
-*   @version: 2.0.0
+*   @version: 2.0.1
 *   https://github.com/foo123/GrammarTemplate
 *
 **/
@@ -335,6 +335,7 @@ function multisplit( tpl, delims )
                 key     : nested,
                 stpl    : template,
                 dval    : default_value,
+                opt     : optional,
                 start   : start_i,
                 end     : end_i
             }, a);
@@ -519,6 +520,11 @@ function non_terminal( args, symbol, SUB, index, orig_args )
             out = optional_block( tpl_args, tpl, SUB, null, null == orig_args ? args : orig_args );
         }
     }
+    else if ( symbol.opt && (null !== symbol.dval) )
+    {
+        // boolean optional argument
+        out = symbol.dval;
+    }
     else
     {
         // plain symbol argument
@@ -562,7 +568,7 @@ function GrammarTemplate( tpl, delims )
     self._args = [tpl||'', delims||GrammarTemplate.defaultDelims];
     self._parsed = false;
 };
-GrammarTemplate.VERSION = '2.0.0';
+GrammarTemplate.VERSION = '2.0.1';
 GrammarTemplate.defaultDelims = ['<','>','[',']',':='/*,'?','*','!','|','{','}'*/];
 GrammarTemplate.guid = guid;
 GrammarTemplate.multisplit = multisplit;

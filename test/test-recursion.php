@@ -27,7 +27,7 @@ echo_();
 <expression2:EXPR>
 
 */
-$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalFlag> ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
+$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
 
 $expr = new GrammarTemplate($tpl);
 
@@ -38,7 +38,7 @@ echo_( );
 
 echo_("output:");
 echo_($expr->render((object)array(
-    'globalFlag'  => 'NOT',
+    'globalNegation'  => true,
     'expression'  => array(
         // term
         array(

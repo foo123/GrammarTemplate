@@ -49,7 +49,7 @@ echo( )
 #<expression2:EXPR>
 #
 #
-tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalFlag> ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>"
+tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>"
 
 expr = GrammarTemplate(tpl)
 
@@ -60,7 +60,7 @@ echo( )
 
 echo("output:")
 echo(expr.render({
-    'globalFlag': 'NOT',
+    'globalNegation': True,
     'expression'  : [
         # term
         [
