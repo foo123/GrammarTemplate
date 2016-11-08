@@ -552,9 +552,9 @@ class GrammarTemplate
             // using sub-template
             $opt_arg = self::walk( $args, $symbol->key, array($symbol->name), $orig_args );
             
-            if ( (null !== $index) && self::is_array($opt_arg) )
+            if ( (null !== $index/* || null !== $symbol->start*/) && (0 !== $index || !$symbol->opt) && self::is_array($opt_arg) )
             {
-                $opt_arg = count($opt_arg) > $index ? $opt_arg[$index] : null;
+                $opt_arg = /*null !== $index ? (*/count($opt_arg) > $index ? $opt_arg[$index] : null/*) : (count($opt_arg) > $symbol->start ? $opt_arg[$symbol->start] : null)*/;
             }
             if ( (null === $opt_arg) && (null !== $symbol->dval) )
             {
@@ -604,7 +604,7 @@ class GrammarTemplate
             $out .= (-1 === $tt
                 ? self::optional_block( $args, $tpl->node, $SUB, $index, $orig_args ) /* optional code-block */
                 : (1 === $tt
-                ? self::non_terminal( $args, $tpl->node, $SUB, $index, $orig_args ) /* non-terminal */
+                ? self::non_terminal( $args, $tpl->node, $SUB, /*0 === $index ? ($tpl->node->opt&&$tpl->node->stpl?null:$index) : */$index, $orig_args ) /* non-terminal */
                 : $tpl->node->val /* terminal */
             ));
             $tpl = $tpl->next;

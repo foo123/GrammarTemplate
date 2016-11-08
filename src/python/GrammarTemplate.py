@@ -452,7 +452,9 @@ def non_terminal( args, symbol, SUB=None, index=None, orig_args=None ):
         # using sub-template
         opt_arg = walk( args, symbol['key'], [symbol['name']], orig_args )
         
-        if (index is not None) and is_array(opt_arg):
+        #if ((index is not None) or (symbol['start'] is not None)) and is_array(opt_arg):
+        #    opt_arg = opt_arg[index] if index is not None else opt_arg[symbol['start']]
+        if (index is not None) and ((index is not 0) or (not symbol['opt'])) and is_array(opt_arg):
             opt_arg = opt_arg[index]
         
         if (opt_arg is None) and (symbol['dval'] is not None):

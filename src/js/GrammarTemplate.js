@@ -497,9 +497,9 @@ function non_terminal( args, symbol, SUB, index, orig_args )
         // using sub-template
         opt_arg = walk( args, symbol.key, [symbol.name], orig_args );
         
-        if ( null != index && is_array(opt_arg) )
+        if ( (null != index/* || null != symbol.start*/) && (0 !== index || !symbol.opt) && is_array(opt_arg) )
         {
-            opt_arg = opt_arg[index];
+            opt_arg = opt_arg[/*null != index ?*/ index /*: symbol.start*/];
         }
         if ( (null == opt_arg) && (null !== symbol.dval) )
         {
@@ -549,7 +549,7 @@ function main( args, tpl, SUB, index, orig_args )
         out += (-1 === tt
             ? optional_block( args, tpl.node, SUB, index, orig_args ) /* optional code-block */
             : (1 === tt
-            ? non_terminal( args, tpl.node, SUB, index, orig_args ) /* non-terminal */
+            ? non_terminal( args, tpl.node, SUB, /*0 === index ? (tpl.node.opt&&tpl.node.stpl?null:index) : */index, orig_args ) /* non-terminal */
             : tpl.node.val /* terminal */
         ));
         tpl = tpl.next;
