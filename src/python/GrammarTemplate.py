@@ -424,13 +424,13 @@ def optional_block( args, block, SUB=None, index=None, orig_args=None ):
         if not opt_vars: return ''
         while opt_vars:
             opt_v = opt_vars.value
-            opt_arg = walk( args, opt_v[1], [opt_v[0]], orig_args )
+            opt_arg = walk( args, opt_v[1], [str(opt_v[0])], orig_args )
             if (block_arg is None) and (block['name'] == opt_v[0]): block_arg = opt_arg
             
             if ((0 == opt_v[2]) and (opt_arg is None)) or ((1 == opt_v[2]) and (opt_arg is not None)): return ''
             opt_vars = opt_vars.prev
     else:
-        block_arg = walk( args, block['key'], [block['name']], orig_args )
+        block_arg = walk( args, block['key'], [str(block['name'])], orig_args )
     
     arr = is_array( block_arg )
     lenn = len(block_arg) if arr else -1
@@ -450,7 +450,7 @@ def non_terminal( args, symbol, SUB=None, index=None, orig_args=None ):
     out = ''
     if SUB and symbol['stpl'] and (symbol['stpl'] in SUB):
         # using sub-template
-        opt_arg = walk( args, symbol['key'], [symbol['name']], orig_args )
+        opt_arg = walk( args, symbol['key'], [str(symbol['name'])], orig_args )
         
         #if ((index is not None) or (symbol['start'] is not None)) and is_array(opt_arg):
         #    opt_arg = opt_arg[index] if index is not None else opt_arg[symbol['start']]
@@ -475,7 +475,7 @@ def non_terminal( args, symbol, SUB=None, index=None, orig_args=None ):
         out = symbol['dval']
     else:
         # plain symbol argument
-        opt_arg = walk( args, symbol['key'], [symbol['name']], orig_args )
+        opt_arg = walk( args, symbol['key'], [str(symbol['name'])], orig_args )
         
         # default value if missing
         if is_array(opt_arg):

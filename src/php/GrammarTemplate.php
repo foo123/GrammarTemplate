@@ -520,7 +520,7 @@ class GrammarTemplate
             while( $opt_vars )
             {
                 $opt_v = $opt_vars->value;
-                $opt_arg = self::walk( $args, $opt_v[1], array($opt_v[0]), $orig_args );
+                $opt_arg = self::walk( $args, $opt_v[1], array((string)$opt_v[0]), $orig_args );
                 if ( (null === $block_arg) && ($block->name === $opt_v[0]) ) $block_arg = $opt_arg;
                 
                 if ( (0 === $opt_v[2] && null === $opt_arg) || (1 === $opt_v[2] && null !== $opt_arg) )  return '';
@@ -529,7 +529,7 @@ class GrammarTemplate
         }
         else
         {
-            $block_arg = self::walk( $args, $block->key, array($block->name), $orig_args );
+            $block_arg = self::walk( $args, $block->key, array((string)$block->name), $orig_args );
         }
         
         $arr = self::is_array( $block_arg ); $len = $arr ? count($block_arg) : -1;
@@ -550,7 +550,7 @@ class GrammarTemplate
         if ( !empty($SUB) && $symbol->stpl && isset($SUB[$symbol->stpl]) )
         {
             // using sub-template
-            $opt_arg = self::walk( $args, $symbol->key, array($symbol->name), $orig_args );
+            $opt_arg = self::walk( $args, $symbol->key, array((string)$symbol->name), $orig_args );
             
             if ( (null !== $index/* || null !== $symbol->start*/) && (0 !== $index || !$symbol->opt) && self::is_array($opt_arg) )
             {
@@ -583,7 +583,7 @@ class GrammarTemplate
         else
         {
             // plain symbol argument
-            $opt_arg = self::walk( $args, $symbol->key, array($symbol->name), $orig_args );
+            $opt_arg = self::walk( $args, $symbol->key, array((string)$symbol->name), $orig_args );
             
             // default value if missing
             if ( self::is_array($opt_arg) )

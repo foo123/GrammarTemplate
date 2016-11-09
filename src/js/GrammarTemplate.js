@@ -462,7 +462,7 @@ function optional_block( args, block, SUB, index, orig_args )
         while( opt_vars )
         {
             opt_v = opt_vars.value;
-            opt_arg = walk( args, opt_v[1], [opt_v[0]], orig_args );
+            opt_arg = walk( args, opt_v[1], [String(opt_v[0])], orig_args );
             if ( (null === block_arg) && (block.name === opt_v[0]) ) block_arg = opt_arg;
             
             if ( (0 === opt_v[2] && null == opt_arg) ||
@@ -474,7 +474,7 @@ function optional_block( args, block, SUB, index, orig_args )
     }
     else
     {
-        block_arg = walk( args, block.key, [block.name], orig_args );
+        block_arg = walk( args, block.key, [String(block.name)], orig_args );
     }
     
     arr = is_array( block_arg ); len = arr ? block_arg.length : -1;
@@ -495,7 +495,7 @@ function non_terminal( args, symbol, SUB, index, orig_args )
     if ( SUB && symbol.stpl && SUB[symbol.stpl] )
     {
         // using sub-template
-        opt_arg = walk( args, symbol.key, [symbol.name], orig_args );
+        opt_arg = walk( args, symbol.key, [String(symbol.name)], orig_args );
         
         if ( (null != index/* || null != symbol.start*/) && (0 !== index || !symbol.opt) && is_array(opt_arg) )
         {
@@ -528,7 +528,7 @@ function non_terminal( args, symbol, SUB, index, orig_args )
     else
     {
         // plain symbol argument
-        opt_arg = walk( args, symbol.key, [symbol.name], orig_args );
+        opt_arg = walk( args, symbol.key, [String(symbol.name)], orig_args );
         
         // default value if missing
         if ( is_array(opt_arg) )
