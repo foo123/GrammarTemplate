@@ -27,9 +27,14 @@ echo_();
 <expression2:EXPR>
 
 */
-$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
+$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>";
 
+function op_func( $val )
+{
+    return '!=' === $val ? '<>' : $val;
+}
 $expr = new GrammarTemplate($tpl);
+$expr->fn['OP'] = 'op_func';
 
 echo_("input template:");
 echo_($tpl);

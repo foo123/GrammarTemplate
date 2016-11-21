@@ -1,9 +1,9 @@
-GrammarTemplate.VERSION = 2.0.1
+GrammarTemplate.VERSION = 2.1.0
 
 input template:
-<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>
+<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>
 <expression2:EXPR>
 
 output:
 (NOT 1 = 1 AND NOT 1 = 2 AND NOT 1 = 3) OR (NOT 1 < 1 AND NOT 1 < 2 AND NOT 1 < 3) OR (NOT 1 > 1 AND NOT 1 > 2 AND NOT 1 > 3)
-(NOT 2 = 1 AND NOT 2 = 2 AND NOT 2 = 3) OR (NOT 2 < 1 AND NOT 2 < 2 AND NOT 2 < 3) OR (NOT 2 > 1 AND NOT 2 > 2 AND NOT 2 > 3) OR (NOT 3 AND NOT 3 != NULL)
+(NOT 2 = 1 AND NOT 2 = 2 AND NOT 2 = 3) OR (NOT 2 < 1 AND NOT 2 < 2 AND NOT 2 < 3) OR (NOT 2 > 1 AND NOT 2 > 2 AND NOT 2 > 3) OR (NOT 3 AND NOT 3 <> NULL)

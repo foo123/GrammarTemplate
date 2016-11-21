@@ -2,7 +2,7 @@
 *   GrammarTemplate, 
 *   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 * 
-*   @version: 2.0.1
+*   @version: 2.1.0
 *   https://github.com/foo123/GrammarTemplate
 *
 **/
@@ -451,7 +451,7 @@ function multisplit( tpl, delims )
     return [roottpl, subtpl];
 }
 
-function optional_block( args, block, SUB, index, orig_args )
+function optional_block( args, block, SUB, FN, index, orig_args )
 {
     var opt_vars, opt_v, opt_arg, arr, rs, re, ri, len, block_arg = null, out = '';
     
@@ -481,43 +481,60 @@ function optional_block( args, block, SUB, index, orig_args )
     if ( arr && (len > block.start) )
     {
         for(rs=block.start,re=(-1===block.end?len-1:Math.min(block.end,len-1)),ri=rs; ri<=re; ri++)
-            out += main( args, block.tpl, SUB, ri, orig_args );
+            out += main( args, block.tpl, SUB, FN, ri, orig_args );
     }
     else if ( !arr && (block.start === block.end) )
     {
-        out = main( args, block.tpl, SUB, null, orig_args );
+        out = main( args, block.tpl, SUB, FN, null, orig_args );
     }
     return out;
 }
-function non_terminal( args, symbol, SUB, index, orig_args )
+function non_terminal( args, symbol, SUB, FN, index, orig_args )
 {
     var opt_arg, tpl_args, tpl, out = '';
-    if ( SUB && symbol.stpl && SUB[symbol.stpl] )
+    if ( (SUB||FN) && symbol.stpl && (SUB[symbol.stpl]||FN[symbol.stpl]) )
     {
-        // using sub-template
+        // using custom function or sub-template
         opt_arg = walk( args, symbol.key, [String(symbol.name)], orig_args );
         
-        if ( (null != index/* || null != symbol.start*/) && (0 !== index || !symbol.opt) && is_array(opt_arg) )
+        if ( FN && FN[symbol.stpl] )
         {
-            opt_arg = opt_arg[/*null != index ?*/ index /*: symbol.start*/];
-        }
-        if ( (null == opt_arg) && (null !== symbol.dval) )
-        {
-            // default value if missing
-            out = symbol.dval;
+            // custom function
+            if ( is_array(opt_arg) )
+            {
+                index = null != index ? index : symbol.start;
+                opt_arg = index < opt_arg.length ? opt_arg[index] : null;
+            }
+            
+            opt_arg = "function" === typeof FN[symbol.stpl] ? FN[symbol.stpl](opt_arg, index, args, orig_args, symbol) : (FN[symbol.stpl]||null);
+            
+            out = (null == opt_arg) && (null !== symbol.dval) ? symbol.dval : String(opt_arg);
         }
         else
         {
-            // try to associate sub-template parameters to actual input arguments
-            tpl = SUB[symbol.stpl].node; tpl_args = {};
-            if ( null != opt_arg )
+            // sub-template
+            if ( (null != index/* || null != symbol.start*/) && (0 !== index || !symbol.opt) && is_array(opt_arg) )
             {
-                /*if ( opt_arg[HAS](tpl.name) && !opt_arg[HAS](symbol.name) ) tpl_args = opt_arg;
-                else tpl_args[tpl.name] = opt_arg;*/
-                if ( is_array(opt_arg) ) tpl_args[tpl.name] = opt_arg;
-                else tpl_args = opt_arg;
+                opt_arg = opt_arg[/*null != index ?*/ index /*: symbol.start*/];
             }
-            out = optional_block( tpl_args, tpl, SUB, null, null == orig_args ? args : orig_args );
+            if ( (null == opt_arg) && (null !== symbol.dval) )
+            {
+                // default value if missing
+                out = symbol.dval;
+            }
+            else
+            {
+                // try to associate sub-template parameters to actual input arguments
+                tpl = SUB[symbol.stpl].node; tpl_args = {};
+                if ( null != opt_arg )
+                {
+                    /*if ( opt_arg[HAS](tpl.name) && !opt_arg[HAS](symbol.name) ) tpl_args = opt_arg;
+                    else tpl_args[tpl.name] = opt_arg;*/
+                    if ( is_array(opt_arg) ) tpl_args[tpl.name] = opt_arg;
+                    else tpl_args = opt_arg;
+                }
+                out = optional_block( tpl_args, tpl, SUB, FN, null, null == orig_args ? args : orig_args );
+            }
         }
     }
     else if ( symbol.opt && (null !== symbol.dval) )
@@ -540,16 +557,16 @@ function non_terminal( args, symbol, SUB, index, orig_args )
     }
     return out;
 }
-function main( args, tpl, SUB, index, orig_args )
+function main( args, tpl, SUB, FN, index, orig_args )
 {
     var tt, out = '';
     while ( tpl )
     {
         tt = tpl.node.type;
         out += (-1 === tt
-            ? optional_block( args, tpl.node, SUB, index, orig_args ) /* optional code-block */
+            ? optional_block( args, tpl.node, SUB, FN, index, orig_args ) /* optional code-block */
             : (1 === tt
-            ? non_terminal( args, tpl.node, SUB, /*0 === index ? (tpl.node.opt&&tpl.node.stpl?null:index) : */index, orig_args ) /* non-terminal */
+            ? non_terminal( args, tpl.node, SUB, FN, /*0 === index ? (tpl.node.opt&&tpl.node.stpl?null:index) : */index, orig_args ) /* non-terminal */
             : tpl.node.val /* terminal */
         ));
         tpl = tpl.next;
@@ -564,11 +581,11 @@ function GrammarTemplate( tpl, delims )
     if ( !(self instanceof GrammarTemplate) ) return new GrammarTemplate(tpl, delims);
     self.id = null;
     self.tpl = null;
+    self.fn = {};
     // lazy init
     self._args = [tpl||'', delims||GrammarTemplate.defaultDelims];
-    self._parsed = false;
 };
-GrammarTemplate.VERSION = '2.0.1';
+GrammarTemplate.VERSION = '2.1.0';
 GrammarTemplate.defaultDelims = ['<','>','[',']',':='/*,'?','*','!','|','{','}'*/];
 GrammarTemplate.guid = guid;
 GrammarTemplate.multisplit = multisplit;
@@ -578,23 +595,22 @@ GrammarTemplate[PROTO] = {
     
     ,id: null
     ,tpl: null
-    ,_parsed: false
+    ,fn: null
     ,_args: null
     
     ,dispose: function( ) {
         var self = this;
         self.id = null;
         self.tpl = null;
+        self.fn = null;
         self._args = null;
-        self._parsed = null;
         return self;
     }
     ,parse: function( ) {
         var self = this;
-        if ( false === self._parsed )
+        if ( null === self.tpl )
         {
             // lazy init
-            self._parsed = true;
             self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] );
             self._args = null;
         }
@@ -603,8 +619,8 @@ GrammarTemplate[PROTO] = {
     ,render: function( args ) {
         var self = this;
         // lazy init
-        if ( false === self._parsed ) self.parse( );
-        return GrammarTemplate.main( null==args ? {} : args, self.tpl[0], self.tpl[1] );
+        if ( null === self.tpl ) self.parse( );
+        return GrammarTemplate.main( null==args ? {} : args, self.tpl[0], self.tpl[1], self.fn );
     }
 };
 

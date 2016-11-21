@@ -3,7 +3,7 @@
 *   GrammarTemplate, 
 *   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 * 
-*   @version: 2.0.1
+*   @version: 2.1.0
 *   https://github.com/foo123/GrammarTemplate
 *
 **/
@@ -37,7 +37,7 @@ class GrammarTemplate__TplEntry
 
 class GrammarTemplate
 {    
-    const VERSION = '2.0.1';
+    const VERSION = '2.1.0';
     private static $GUID = 0;
     
     private static function guid( )
@@ -508,7 +508,7 @@ class GrammarTemplate
         return array($roottpl, &$subtpl);
     }
 
-    public static function optional_block( $args, $block, &$SUB, $index=null, $orig_args=null )
+    public static function optional_block( $args, $block, &$SUB, &$FN, $index=null, $orig_args=null )
     {
         $out = '';
         $block_arg = null;
@@ -536,43 +536,60 @@ class GrammarTemplate
         if ( $arr && ($len > $block->start) )
         {
             for($rs=$block->start,$re=(-1===$block->end?$len-1:min($block->end,$len-1)),$ri=$rs; $ri<=$re; $ri++)
-                $out .= self::main( $args, $block->tpl, $SUB, $ri, $orig_args );
+                $out .= self::main( $args, $block->tpl, $SUB, $FN, $ri, $orig_args );
         }
         else if ( !$arr && ($block->start === $block->end) )
         {
-            $out = self::main( $args, $block->tpl, $SUB, null, $orig_args );
+            $out = self::main( $args, $block->tpl, $SUB, $FN, null, $orig_args );
         }
         return $out;
     }
-    public static function non_terminal( $args, $symbol, &$SUB, $index=null, $orig_args=null )
+    public static function non_terminal( $args, $symbol, &$SUB, &$FN, $index=null, $orig_args=null )
     {
         $out = '';
-        if ( !empty($SUB) && $symbol->stpl && isset($SUB[$symbol->stpl]) )
+        if ( (!empty($SUB)||!empty($FN)) && $symbol->stpl && (isset($SUB[$symbol->stpl])||isset($FN[$symbol->stpl])) )
         {
-            // using sub-template
+            // using custom function or sub-template
             $opt_arg = self::walk( $args, $symbol->key, array((string)$symbol->name), $orig_args );
             
-            if ( (null !== $index/* || null !== $symbol->start*/) && (0 !== $index || !$symbol->opt) && self::is_array($opt_arg) )
+            if ( !empty($FN) && isset($FN[$symbol->stpl]) )
             {
-                $opt_arg = /*null !== $index ? (*/count($opt_arg) > $index ? $opt_arg[$index] : null/*) : (count($opt_arg) > $symbol->start ? $opt_arg[$symbol->start] : null)*/;
-            }
-            if ( (null === $opt_arg) && (null !== $symbol->dval) )
-            {
-                // default value if missing
-                $out = $symbol->dval;
+                // custom function
+                if ( self::is_array($opt_arg) )
+                {
+                    $index = null !== $index ? $index : $symbol->start;
+                    $opt_arg = $index < count($opt_arg) ? $opt_arg[$index] : null;
+                }
+                
+                $opt_arg = is_callable($FN[$symbol->stpl]) ? call_user_func($FN[$symbol->stpl], $opt_arg, $index, $args, $orig_args, $symbol) : $FN[$symbol->stpl];
+                
+                $out = (null === $opt_arg) && (null !== $symbol->dval) ? $symbol->dval : strval($opt_arg);
             }
             else
             {
-                // try to associate sub-template parameters to actual input arguments
-                $tpl = $SUB[$symbol->stpl]->node; $tpl_args = array();
-                if ( null !== $opt_arg )
+                // sub-template
+                if ( (null !== $index/* || null !== $symbol->start*/) && (0 !== $index || !$symbol->opt) && self::is_array($opt_arg) )
                 {
-                    /*if ( isset($opt_arg[$tpl->name]) && !isset($opt_arg[$symbol->name]) ) $tpl_args = $opt_arg;
-                    else $tpl_args[$tpl->name] = $opt_arg;*/
-                    if ( self::is_array($opt_arg) ) $tpl_args[$tpl->name] = $opt_arg;
-                    else $tpl_args = $opt_arg;
+                    $opt_arg = /*null !== $index ? (*/count($opt_arg) > $index ? $opt_arg[$index] : null/*) : (count($opt_arg) > $symbol->start ? $opt_arg[$symbol->start] : null)*/;
                 }
-                $out = self::optional_block( $tpl_args, $tpl, $SUB, null, null === $orig_args ? $args : $orig_args );
+                if ( (null === $opt_arg) && (null !== $symbol->dval) )
+                {
+                    // default value if missing
+                    $out = $symbol->dval;
+                }
+                else
+                {
+                    // try to associate sub-template parameters to actual input arguments
+                    $tpl = $SUB[$symbol->stpl]->node; $tpl_args = array();
+                    if ( null !== $opt_arg )
+                    {
+                        /*if ( isset($opt_arg[$tpl->name]) && !isset($opt_arg[$symbol->name]) ) $tpl_args = $opt_arg;
+                        else $tpl_args[$tpl->name] = $opt_arg;*/
+                        if ( self::is_array($opt_arg) ) $tpl_args[$tpl->name] = $opt_arg;
+                        else $tpl_args = $opt_arg;
+                    }
+                    $out = self::optional_block( $tpl_args, $tpl, $SUB, $FN, null, null === $orig_args ? $args : $orig_args );
+                }
             }
         }
         elseif ( $symbol->opt && (null !== $symbol->dval) )
@@ -595,16 +612,16 @@ class GrammarTemplate
         }
         return $out;
     }
-    public static function main( $args, $tpl, &$SUB=null, $index=null, $orig_args=null )
+    public static function main( $args, $tpl, &$SUB=null, &$FN=null, $index=null, $orig_args=null )
     {
         $out = '';
         while ( $tpl )
         {
             $tt = $tpl->node->type;
             $out .= (-1 === $tt
-                ? self::optional_block( $args, $tpl->node, $SUB, $index, $orig_args ) /* optional code-block */
+                ? self::optional_block( $args, $tpl->node, $SUB, $FN, $index, $orig_args ) /* optional code-block */
                 : (1 === $tt
-                ? self::non_terminal( $args, $tpl->node, $SUB, /*0 === $index ? ($tpl->node->opt&&$tpl->node->stpl?null:$index) : */$index, $orig_args ) /* non-terminal */
+                ? self::non_terminal( $args, $tpl->node, $SUB, $FN, /*0 === $index ? ($tpl->node->opt&&$tpl->node->stpl?null:$index) : */$index, $orig_args ) /* non-terminal */
                 : $tpl->node->val /* terminal */
             ));
             $tpl = $tpl->next;
@@ -616,17 +633,17 @@ class GrammarTemplate
     
     public $id = null;
     public $tpl = null;
+    public $fn = null;
     protected $_args = null;
-    protected $_parsed = false;
     
     public function __construct($tpl='', $delims=null)
     {
         $this->id = null;
         $this->tpl = null;
+        $this->fn = array();
         if ( empty($delims) ) $delims = self::$defaultDelims;
         // lazy init
         $this->_args = array($tpl, $delims);
-        $this->_parsed = false;
     }
 
     public function __destruct()
@@ -638,17 +655,16 @@ class GrammarTemplate
     {
         $this->id = null;
         $this->tpl = null;
+        $this->fn = null;
         $this->_args = null;
-        $this->_parsed = null;
         return $this;
     }
     
     public function parse( )
     {
-        if ( false === $this->_parsed )
+        if ( null === $this->tpl )
         {
             // lazy init
-            $this->_parsed = true;
             $this->tpl = self::multisplit( $this->_args[0], $this->_args[1] );
             $this->_args = null;
         }
@@ -658,8 +674,8 @@ class GrammarTemplate
     public function render($args=null)
     {
         // lazy init
-        if ( false === $this->_parsed ) $this->parse( );
-        return self::main( null === $args ? array() : $args, $this->tpl[0], $this->tpl[1] );
+        if ( null === $this->tpl ) $this->parse( );
+        return self::main( null === $args ? array() : $args, $this->tpl[0], $this->tpl[1], $this->fn );
     }
 }    
 }
