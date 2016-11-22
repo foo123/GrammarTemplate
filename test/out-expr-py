@@ -1,7 +1,7 @@
 GrammarTemplate.VERSION = 2.1.0
 
 input template:
-<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>
+<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>
 <expression2:EXPR>
 
 output:

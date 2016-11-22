@@ -547,25 +547,12 @@ class GrammarTemplate
     public static function non_terminal( $args, $symbol, &$SUB, &$FN, $index=null, $orig_args=null )
     {
         $out = '';
-        if ( (!empty($SUB)||!empty($FN)) && $symbol->stpl && (isset($SUB[$symbol->stpl])||isset($FN[$symbol->stpl])) )
+        if ( $symbol->stpl && ((!empty($SUB) && isset($SUB[$symbol->stpl])) || (!empty($FN) && isset($FN[$symbol->stpl])) || (isset(self::$fnGlobal[$symbol->stpl]))) )
         {
             // using custom function or sub-template
             $opt_arg = self::walk( $args, $symbol->key, array((string)$symbol->name), $orig_args );
-            
-            if ( !empty($FN) && isset($FN[$symbol->stpl]) )
-            {
-                // custom function
-                if ( self::is_array($opt_arg) )
-                {
-                    $index = null !== $index ? $index : $symbol->start;
-                    $opt_arg = $index < count($opt_arg) ? $opt_arg[$index] : null;
-                }
-                
-                $opt_arg = is_callable($FN[$symbol->stpl]) ? call_user_func($FN[$symbol->stpl], $opt_arg, $index, $args, $orig_args, $symbol) : $FN[$symbol->stpl];
-                
-                $out = (null === $opt_arg) && (null !== $symbol->dval) ? $symbol->dval : strval($opt_arg);
-            }
-            else
+        
+            if ( !empty($SUB) && isset($SUB[$symbol->stpl]) )
             {
                 // sub-template
                 if ( (null !== $index/* || null !== $symbol->start*/) && (0 !== $index || !$symbol->opt) && self::is_array($opt_arg) )
@@ -590,6 +577,21 @@ class GrammarTemplate
                     }
                     $out = self::optional_block( $tpl_args, $tpl, $SUB, $FN, null, null === $orig_args ? $args : $orig_args );
                 }
+            }
+            else//if ( $fn )
+            {
+                // custom function
+                $fn = !empty($FN) && isset($FN[$symbol->stpl]) ? $FN[$symbol->stpl] : (isset(self::$fnGlobal[$symbol->stpl]) ? self::$fnGlobal[$symbol->stpl] : null);
+                
+                if ( self::is_array($opt_arg) )
+                {
+                    $index = null !== $index ? $index : $symbol->start;
+                    $opt_arg = $index < count($opt_arg) ? $opt_arg[$index] : null;
+                }
+                
+                $opt_arg = is_callable($fn) ? call_user_func($fn, $opt_arg, $index, $args, $orig_args, $symbol) : strval($fn);
+                
+                $out = (null === $opt_arg) && (null !== $symbol->dval) ? $symbol->dval : strval($opt_arg);
             }
         }
         elseif ( $symbol->opt && (null !== $symbol->dval) )
@@ -630,6 +632,7 @@ class GrammarTemplate
     }
     
     public static $defaultDelims = array('<','>','[',']',':='/*,'?','*','!','|','{','}'*/);
+    public static $fnGlobal = array();
     
     public $id = null;
     public $tpl = null;
@@ -662,7 +665,7 @@ class GrammarTemplate
     
     public function parse( )
     {
-        if ( null === $this->tpl )
+        if ( (null === $this->tpl) && (null !== $this->_args) )
         {
             // lazy init
             $this->tpl = self::multisplit( $this->_args[0], $this->_args[1] );

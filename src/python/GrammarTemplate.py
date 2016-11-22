@@ -448,20 +448,11 @@ def optional_block( args, block, SUB=None, FN=None, index=None, orig_args=None )
 
 def non_terminal( args, symbol, SUB=None, FN=None, index=None, orig_args=None ):
     out = ''
-    if (SUB or FN) and symbol['stpl'] and ((symbol['stpl'] in SUB) or (symbol['stpl'] in FN)):
+    if symbol['stpl'] and ((SUB and (symbol['stpl'] in SUB)) or (FN and (symbol['stpl'] in FN)) or ((symbol['stpl'] in GrammarTemplate.fnGlobal))):
         # using custom function or sub-template
         opt_arg = walk( args, symbol['key'], [str(symbol['name'])], orig_args )
         
-        if FN and (symbol['stpl'] in FN):
-            # custom function
-            if is_array(opt_arg):
-                index = index if index is not None else symbol['start']
-                opt_arg = opt_arg[index] if index < len(opt_arg) else None
-            
-            opt_arg = FN[symbol['stpl']](opt_arg, index, args, orig_args, symbol) if callable(FN[symbol['stpl']]) else FN[symbol['stpl']]
-            
-            out = symbol['dval'] if (opt_arg is None) and (symbol['dval'] is not None) else str(opt_arg)
-        else:
+        if SUB and (symbol['stpl'] in SUB):
             # sub-template
             #if ((index is not None) or (symbol['start'] is not None)) and is_array(opt_arg):
             #    opt_arg = opt_arg[index] if index is not None else opt_arg[symbol['start']]
@@ -481,6 +472,17 @@ def non_terminal( args, symbol, SUB=None, FN=None, index=None, orig_args=None ):
                     if is_array(opt_arg): tpl_args[tpl['name']] = opt_arg
                     else: tpl_args = opt_arg
                 out = optional_block( tpl_args, tpl, SUB, FN, None, args if orig_args is None else orig_args )
+        else:#elif fn:
+            # custom function
+            fn = FN[symbol['stpl']] if FN and (symbol['stpl'] in FN) else (GrammarTemplate.fnGlobal[symbol['stpl']] if symbol['stpl'] in GrammarTemplate.fnGlobal else None)
+            
+            if is_array(opt_arg):
+                index = index if index is not None else symbol['start']
+                opt_arg = opt_arg[index] if index < len(opt_arg) else None
+            
+            opt_arg = fn(opt_arg, index, args, orig_args, symbol) if callable(fn) else str(fn)
+            
+            out = symbol['dval'] if (opt_arg is None) and (symbol['dval'] is not None) else str(opt_arg)
     elif symbol['opt'] and (symbol['dval'] is not None):
         # boolean optional argument
         out = symbol['dval']
@@ -516,6 +518,7 @@ class GrammarTemplate:
 
     #defaultDelims = ['<','>','[',']',':=','?','*','!','|','{','}']
     defaultDelims = ['<','>','[',']',':=']
+    fnGlobal = {}
     guid = guid
     multisplit = multisplit
     main = main
@@ -538,7 +541,7 @@ class GrammarTemplate:
         return self
     
     def parse(self):
-        if self.tpl is None:
+        if (self.tpl is None) and (self._args is not None):
             # lazy init
             self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] )
             self._args = None

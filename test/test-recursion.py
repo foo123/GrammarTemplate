@@ -49,12 +49,16 @@ echo( )
 #<expression2:EXPR>
 #
 #
-tpl = "<:EXPR>:=[<term>:=[(<factor>:=[[<?globalNegation|>NOT ]<lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>"
+tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>\n<expression2:EXPR>"
 
 def op_func( val, *rest ):
     return '<>' if '!=' == val else val
+
+def neg_func( val, *rest ):
+    return 'NOT ' if val else ''
     
 expr = GrammarTemplate(tpl)
+GrammarTemplate.fnGlobal['NEG'] = neg_func
 expr.fn['OP'] = op_func
 
 echo("input template:")

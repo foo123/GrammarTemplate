@@ -491,26 +491,13 @@ function optional_block( args, block, SUB, FN, index, orig_args )
 }
 function non_terminal( args, symbol, SUB, FN, index, orig_args )
 {
-    var opt_arg, tpl_args, tpl, out = '';
-    if ( (SUB||FN) && symbol.stpl && (SUB[symbol.stpl]||FN[symbol.stpl]) )
+    var opt_arg, tpl_args, tpl, out = '', fn;
+    if ( symbol.stpl && ((SUB && SUB[symbol.stpl]) || (FN && FN[symbol.stpl]) || (GrammarTemplate.fnGlobal[symbol.stpl])) )
     {
         // using custom function or sub-template
         opt_arg = walk( args, symbol.key, [String(symbol.name)], orig_args );
         
-        if ( FN && FN[symbol.stpl] )
-        {
-            // custom function
-            if ( is_array(opt_arg) )
-            {
-                index = null != index ? index : symbol.start;
-                opt_arg = index < opt_arg.length ? opt_arg[index] : null;
-            }
-            
-            opt_arg = "function" === typeof FN[symbol.stpl] ? FN[symbol.stpl](opt_arg, index, args, orig_args, symbol) : (FN[symbol.stpl]||null);
-            
-            out = (null == opt_arg) && (null !== symbol.dval) ? symbol.dval : String(opt_arg);
-        }
-        else
+        if ( SUB && SUB[symbol.stpl] )
         {
             // sub-template
             if ( (null != index/* || null != symbol.start*/) && (0 !== index || !symbol.opt) && is_array(opt_arg) )
@@ -535,6 +522,21 @@ function non_terminal( args, symbol, SUB, FN, index, orig_args )
                 }
                 out = optional_block( tpl_args, tpl, SUB, FN, null, null == orig_args ? args : orig_args );
             }
+        }
+        else //if ( fn )
+        {
+            // custom function
+            fn = FN && FN[symbol.stpl] ? FN[symbol.stpl] : (GrammarTemplate.fnGlobal[symbol.stpl] ? GrammarTemplate.fnGlobal[symbol.stpl] : null);
+            
+            if ( is_array(opt_arg) )
+            {
+                index = null != index ? index : symbol.start;
+                opt_arg = index < opt_arg.length ? opt_arg[index] : null;
+            }
+            
+            opt_arg = "function" === typeof fn ? fn(opt_arg, index, args, orig_args, symbol) : String(fn);
+            
+            out = (null == opt_arg) && (null !== symbol.dval) ? symbol.dval : String(opt_arg);
         }
     }
     else if ( symbol.opt && (null !== symbol.dval) )
@@ -587,6 +589,7 @@ function GrammarTemplate( tpl, delims )
 };
 GrammarTemplate.VERSION = '2.1.0';
 GrammarTemplate.defaultDelims = ['<','>','[',']',':='/*,'?','*','!','|','{','}'*/];
+GrammarTemplate.fnGlobal = {};
 GrammarTemplate.guid = guid;
 GrammarTemplate.multisplit = multisplit;
 GrammarTemplate.main = main;
@@ -608,7 +611,7 @@ GrammarTemplate[PROTO] = {
     }
     ,parse: function( ) {
         var self = this;
-        if ( null === self.tpl )
+        if ( (null === self.tpl) && (null !== self._args) )
         {
             // lazy init
             self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] );
