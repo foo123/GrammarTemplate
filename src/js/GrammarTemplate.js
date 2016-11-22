@@ -140,7 +140,7 @@ function TplEntry( node, tpl )
     this.next = null;
 }
 
-function multisplit( tpl, delims )
+function multisplit( tpl, delims, postop )
 {
     var IDL = delims[0], IDR = delims[1],
         OBL = delims[2], OBR = delims[3], TPL = delims[4],
@@ -148,11 +148,12 @@ function multisplit( tpl, delims )
         lenOBL = OBL.length, lenOBR = OBR.length, lenTPL = TPL.length,
         ESC = '\\', OPT = '?', OPTR = '*', NEG = '!', DEF = '|',
         REPL = '{', REPR = '}', DOT = '.', REF = ':',
-        default_value = null, negative = 0, optional = 0, nested, start_i, end_i, template,
+        default_value = null, negative = 0, optional = 0, nested, bypass, start_i, end_i, template,
         argument, p, stack, c, a, b, s, l = tpl.length, i, j, jl, escaped, ch,
         subtpl, arg_tpl, cur_tpl, start_tpl, cur_arg, opt_args,
         roottpl, block, cur_block, prev_arg, prev_opt_args;
     
+    postop = true === postop;
     a = new TplEntry({type: 0, val: ''});
     cur_arg = {
         type    : 1,
@@ -207,7 +208,7 @@ function multisplit( tpl, delims )
                 escaped = false;
                 continue;
             }
-            
+            bypass = 0;
             // argument
             argument = s; s = '';
             if ( -1 < (p=argument.indexOf(DEF)) )
@@ -219,7 +220,25 @@ function multisplit( tpl, delims )
             {
                 default_value = null;
             }
-            c = argument[CHAR](0);
+            if ( postop )
+            {
+                c = tpl.substr(i,2);
+                if ( (ESC+OPT === c) || (ESC+OPTR === c) || (ESC+REPL === c) )
+                {
+                    // escaped, bypass
+                    i += 1;
+                    c = '';
+                    bypass = 1;
+                }
+                else
+                {
+                    c = i < l ? tpl[CHAR](i) : '';
+                }
+            }
+            else
+            {
+                c = argument[CHAR](0);
+            }
             if ( OPT === c || OPTR === c )
             {
                 optional = 1;
@@ -233,35 +252,60 @@ function multisplit( tpl, delims )
                     start_i = 0;
                     end_i = 0;
                 }
-                argument = argument.slice(1);
-                if ( NEG === argument[CHAR](0) )
+                if ( postop )
                 {
-                    negative = 1;
-                    argument = argument.slice(1);
+                    i += 1;
+                    if ( (i < l) && (NEG === tpl[CHAR](i)) )
+                    {
+                        negative = 1;
+                        i += 1;
+                    }
+                    else
+                    {
+                        negative = 0;
+                    }
                 }
                 else
                 {
-                    negative = 0;
+                    argument = argument.slice(1);
+                    if ( NEG === argument[CHAR](0) )
+                    {
+                        negative = 1;
+                        argument = argument.slice(1);
+                    }
+                    else
+                    {
+                        negative = 0;
+                    }
                 }
             }
             else if ( REPL === c )
             {
-                s = ''; j = 1; jl = argument.length;
-                while ( j < jl && REPR !== argument[CHAR](j) ) s += argument[CHAR](j++);
-                argument = argument.slice( j+1 );
+                if ( postop )
+                {
+                    s = ''; j = i+1; jl = l;
+                    while ( (j < jl) && (REPR !== tpl[CHAR](j)) ) s += tpl[CHAR](j++);
+                    i = j;
+                }
+                else
+                {
+                    s = ''; j = 1; jl = argument.length;
+                    while ( (j < jl) && (REPR !== argument[CHAR](j)) ) s += argument[CHAR](j++);
+                    argument = argument.slice( j+1 );
+                }
                 s = s.split(',');
                 if ( s.length > 1 )
                 {
                     start_i = trim(s[0]);
-                    start_i = start_i.length ? parseInt(start_i,10)||0 : 0;
+                    start_i = start_i.length ? (+start_i)|0 /*parseInt(start_i,10)||0*/ : 0;
                     end_i = trim(s[1]);
-                    end_i = end_i.length ? parseInt(end_i,10)||0 : -1;
+                    end_i = end_i.length ? (+end_i)|0 /*parseInt(end_i,10)||0*/ : -1;
                     optional = 1;
                 }
                 else
                 {
                     start_i = trim(s[0]);
-                    start_i = start_i.length ? parseInt(start_i,10)||0 : 0;
+                    start_i = start_i.length ? (+start_i)|0 /*parseInt(start_i,10)||0*/ : 0;
                     end_i = start_i;
                     optional = 0;
                 }
@@ -283,7 +327,7 @@ function multisplit( tpl, delims )
             
             if ( cur_tpl && !arg_tpl[cur_tpl] ) arg_tpl[cur_tpl] = {};
             
-            if ( TPL+OBL === tpl.substr(i,lenTPL+lenOBL) )
+            if ( !bypass && (TPL+OBL === tpl.substr(i,lenTPL+lenOBL)) )
             {
                 // template definition
                 i += lenTPL;
@@ -577,15 +621,15 @@ function main( args, tpl, SUB, FN, index, orig_args )
 }
 
 
-function GrammarTemplate( tpl, delims )
+function GrammarTemplate( tpl, delims, postop )
 {
     var self = this;
-    if ( !(self instanceof GrammarTemplate) ) return new GrammarTemplate(tpl, delims);
+    if ( !(self instanceof GrammarTemplate) ) return new GrammarTemplate(tpl, delims, postop);
     self.id = null;
     self.tpl = null;
     self.fn = {};
     // lazy init
-    self._args = [tpl||'', delims||GrammarTemplate.defaultDelims];
+    self._args = [tpl||'', delims||GrammarTemplate.defaultDelims, postop||false];
 };
 GrammarTemplate.VERSION = '2.1.0';
 GrammarTemplate.defaultDelims = ['<','>','[',']',':='/*,'?','*','!','|','{','}'*/];
@@ -614,7 +658,7 @@ GrammarTemplate[PROTO] = {
         if ( (null === self.tpl) && (null !== self._args) )
         {
             // lazy init
-            self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] );
+            self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1], self._args[2] );
             self._args = null;
         }
         return self;

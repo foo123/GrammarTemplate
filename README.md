@@ -223,3 +223,4 @@ output:
 * handle boolean-like optional arguments [DONE, through setting (empty) default value for optional argumement, is handled as pure boolean on/off flag argument]
 * optimise parsing and rendering [DONE]
 * support some basic and/or user-defined functions [DONE, similar custom function definition as custom sub-template, calls function if custom function with same name has been defined]
+* support both `pre-` and `post-` (repeat) grammar operators, i.e both `<?symbol>`,`<*symbol>`,`<{0,2}symbol>` and `<symbol>?`,`<symbol>*`,`<symbol>{0,2}` for more familiar grammar syntax [DONE, via extra parameter in template instantiation]

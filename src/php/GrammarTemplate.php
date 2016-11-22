@@ -192,7 +192,7 @@ class GrammarTemplate
         return $found ? $o : null;
     }
     
-    public static function multisplit( $tpl, $delims )
+    public static function multisplit( $tpl, $delims, $postop=false )
     {
         $IDL = $delims[0]; $IDR = $delims[1];
         $OBL = $delims[2]; $OBR = $delims[3]; $TPL = $delims[4];
@@ -203,6 +203,7 @@ class GrammarTemplate
         $default_value = null; $negative = 0; $optional = 0;
         $l = strlen($tpl);
         
+        $postop = true === $postop;
         $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> ''));
         $cur_arg = (object)array(
             'type'    => 1,
@@ -258,7 +259,7 @@ class GrammarTemplate
                     $escaped = false;
                     continue;
                 }
-                
+                $bypass = 0;
                 // argument
                 $argument = $s; $s = '';
                 $p = strpos($argument, $DEF);
@@ -271,7 +272,25 @@ class GrammarTemplate
                 {
                     $default_value = null;
                 }
-                $c = $argument[0];
+                if ( $postop )
+                {
+                    $c = substr($tpl,$i,2);
+                    if ( ($ESC.$OPT === $c) || ($ESC.$OPTR === $c) || ($ESC.$REPL === $c) )
+                    {
+                        // escaped, bypass
+                        $i += 1;
+                        $c = '';
+                        $bypass = 1;
+                    }
+                    else
+                    {
+                        $c = $i < $l ? $tpl[$i] : '';
+                    }
+                }
+                else
+                {
+                    $c = $argument[0];
+                }
                 if ( $OPT === $c || $OPTR === $c )
                 {
                     $optional = 1;
@@ -285,22 +304,47 @@ class GrammarTemplate
                         $start_i = 0;
                         $end_i = 0;
                     }
-                    $argument = substr($argument,1);
-                    if ( $NEG === $argument[0] )
+                    if ( $postop )
                     {
-                        $negative = 1;
-                        $argument = substr($argument,1);
+                        $i += 1;
+                        if ( ($i < $l) && ($NEG === $tpl[$i]) )
+                        {
+                            $negative = 1;
+                            $i += 1;
+                        }
+                        else
+                        {
+                            $negative = 0;
+                        }
                     }
                     else
                     {
-                        $negative = 0;
+                        $argument = substr($argument,1);
+                        if ( $NEG === $argument[0] )
+                        {
+                            $negative = 1;
+                            $argument = substr($argument,1);
+                        }
+                        else
+                        {
+                            $negative = 0;
+                        }
                     }
                 }
                 elseif ( $REPL === $c )
                 {
-                    $s = ''; $j = 1; $jl = strlen($argument);
-                    while ( $j < $jl && $REPR !== $argument[$j] ) $s .= $argument[$j++];
-                    $argument = substr($argument, $j+1);
+                    if ( $postop )
+                    {
+                        $s = ''; $j = $i+1; $jl = $l;
+                        while ( ($j < $jl) && ($REPR !== $tpl[j]) ) $s .= $tpl[$j++];
+                        $i = $j;
+                    }
+                    else
+                    {
+                        $s = ''; $j = 1; $jl = strlen($argument);
+                        while ( ($j < $jl) && ($REPR !== $argument[$j]) ) $s .= $argument[$j++];
+                        $argument = substr($argument, $j+1);
+                    }
                     $s = explode(',', $s);
                     if ( count($s) > 1 )
                     {
@@ -338,7 +382,7 @@ class GrammarTemplate
                 
                 if ( $cur_tpl && !isset($arg_tpl[$cur_tpl]) ) $arg_tpl[$cur_tpl] = array();
                 
-                if ( $TPL.$OBL === substr($tpl,$i,$lenTPL+$lenOBL) )
+                if ( !$bypass && ($TPL.$OBL === substr($tpl,$i,$lenTPL+$lenOBL)) )
                 {
                     // template definition
                     $i += $lenTPL;
@@ -639,14 +683,14 @@ class GrammarTemplate
     public $fn = null;
     protected $_args = null;
     
-    public function __construct($tpl='', $delims=null)
+    public function __construct($tpl='', $delims=null, $postop=false)
     {
         $this->id = null;
         $this->tpl = null;
         $this->fn = array();
         if ( empty($delims) ) $delims = self::$defaultDelims;
         // lazy init
-        $this->_args = array($tpl, $delims);
+        $this->_args = array($tpl, $delims, $postop);
     }
 
     public function __destruct()
@@ -668,7 +712,7 @@ class GrammarTemplate
         if ( (null === $this->tpl) && (null !== $this->_args) )
         {
             // lazy init
-            $this->tpl = self::multisplit( $this->_args[0], $this->_args[1] );
+            $this->tpl = self::multisplit( $this->_args[0], $this->_args[1], $this->_args[2] );
             $this->_args = null;
         }
         return $this;

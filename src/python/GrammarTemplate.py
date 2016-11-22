@@ -125,7 +125,7 @@ class TplEntry:
         self.prev = tpl
         self.next = None
 
-def multisplit( tpl, delims ):
+def multisplit( tpl, delims, postop=False ):
     IDL = delims[0]
     IDR = delims[1]
     OBL = delims[2]
@@ -150,6 +150,7 @@ def multisplit( tpl, delims ):
     optional = 0
     l = len(tpl)
     
+    postop = postop is True
     a = TplEntry({'type': 0, 'val': ''})
     cur_arg = {
         'type'    : 1,
@@ -204,6 +205,7 @@ def multisplit( tpl, delims ):
                 escaped = False
                 continue
             
+            bypass = False
             # argument
             argument = s
             s = ''
@@ -214,7 +216,17 @@ def multisplit( tpl, delims ):
             else:
                 default_value = None
             
-            c = argument[0]
+            if postop:
+                c = tpl[i:i+2]
+                if (ESC+OPT == c) or (ESC+OPTR == c) or (ESC+REPL == c):
+                    # escaped, bypass
+                    i += 1
+                    c = ''
+                    bypass = True
+                else:
+                    c = tpl[i] if i < l else ''
+            else:
+                c = argument[0]
             if OPT == c or OPTR == c:
                 optional = 1
                 if OPTR == c:
@@ -223,20 +235,37 @@ def multisplit( tpl, delims ):
                 else:
                     start_i = 0
                     end_i = 0
-                argument = argument[1:]
-                if NEG == argument[0]:
-                    negative = 1
-                    argument = argument[1:]
+                if postop:
+                    i += 1
+                    if (i < l) and (NEG == tpl[i]):
+                        negative = 1
+                        i += 1
+                    else:
+                        negative = 0
                 else:
-                    negative = 0
+                    argument = argument[1:]
+                    if NEG == argument[0]:
+                        negative = 1
+                        argument = argument[1:]
+                    else:
+                        negative = 0
             elif REPL == c:
-                s = ''
-                j = 1
-                jl = len(argument)
-                while j < jl and REPR != argument[j]:
-                    s += argument[j]
-                    j += 1
-                argument = argument[j+1:]
+                if postop:
+                    s = ''
+                    j = i+1
+                    jl = l
+                    while (j < jl) and (REPR != tpl[j]):
+                        s += tpl[j]
+                        j += 1
+                    i = j
+                else:
+                    s = ''
+                    j = 1
+                    jl = len(argument)
+                    while (j < jl) and (REPR != argument[j]):
+                        s += argument[j]
+                        j += 1
+                    argument = argument[j+1:]
                 s = s.split(',')
                 if len(s) > 1:
                     start_i = s[0].strip()
@@ -267,7 +296,7 @@ def multisplit( tpl, delims ):
             
             if cur_tpl and (cur_tpl not in arg_tpl): arg_tpl[cur_tpl] = {}
             
-            if TPL+OBL == tpl[i:i+lenTPL+lenOBL]:
+            if (not bypass) and (TPL+OBL == tpl[i:i+lenTPL+lenOBL]):
                 # template definition
                 i += lenTPL
                 template = template if template and len(template) else 'grtpl--'+guid()
@@ -523,12 +552,12 @@ class GrammarTemplate:
     multisplit = multisplit
     main = main
     
-    def __init__(self, tpl='', delims=None):
+    def __init__(self, tpl='', delims=None, postop=False):
         self.id = None
         self.tpl = None
         self.fn = {}
         # lazy init
-        self._args = [ tpl, delims if delims else GrammarTemplate.defaultDelims ]
+        self._args = [ tpl, delims if delims else GrammarTemplate.defaultDelims, postop ]
 
     def __del__(self):
         self.dispose()
@@ -543,7 +572,7 @@ class GrammarTemplate:
     def parse(self):
         if (self.tpl is None) and (self._args is not None):
             # lazy init
-            self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1] )
+            self.tpl = GrammarTemplate.multisplit( self._args[0], self._args[1], self._args[2] )
             self._args = None
         return self
     
