@@ -205,7 +205,6 @@ def multisplit( tpl, delims, postop=False ):
                 escaped = False
                 continue
             
-            bypass = False
             # argument
             argument = s
             s = ''
@@ -215,14 +214,13 @@ def multisplit( tpl, delims, postop=False ):
                 argument = argument[0:p]
             else:
                 default_value = None
-            
+            not_escd = True
             if postop:
                 c = tpl[i:i+2]
                 if (ESC+OPT == c) or (ESC+OPTR == c) or (ESC+REPL == c):
-                    # escaped, bypass
+                    not_escd = False
                     i += 1
                     c = ''
-                    bypass = True
                 else:
                     c = tpl[i] if i < l else ''
             else:
@@ -243,12 +241,12 @@ def multisplit( tpl, delims, postop=False ):
                     else:
                         negative = 0
                 else:
-                    argument = argument[1:]
-                    if NEG == argument[0]:
+                    if NEG == argument[1]:
                         negative = 1
-                        argument = argument[1:]
+                        argument = argument[2:]
                     else:
                         negative = 0
+                        argument = argument[1:]
             elif REPL == c:
                 if postop:
                     s = ''
@@ -296,7 +294,7 @@ def multisplit( tpl, delims, postop=False ):
             
             if cur_tpl and (cur_tpl not in arg_tpl): arg_tpl[cur_tpl] = {}
             
-            if (not bypass) and (TPL+OBL == tpl[i:i+lenTPL+lenOBL]):
+            if not_escd and TPL+OBL == tpl[i:i+lenTPL+lenOBL]:
                 # template definition
                 i += lenTPL
                 template = template if template and len(template) else 'grtpl--'+guid()

@@ -23,11 +23,14 @@ echo( );
 <expression2:EXPR>
 
 */
-var tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <op:OP>? <rhs|NULL>]][ AND <factor>*])][ OR <term>*]]<expression:EXPR>\n<expression2:EXPR>";
+var tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <op:OP>? <rhs|NULL>]][ AND <factor>*])][ OR <term>*]]<expression:EXPR>\n<expression2:EXPR>\n<foo:FOO>?<foo:FOO>\\?<foo:FOO> ?";
 
 var expr = new GrammarTemplate( tpl, null, true/* post-op mode */ );
 GrammarTemplate.fnGlobal['NEG'] = function( val ) {
     return val ? 'NOT ' : '';
+};
+GrammarTemplate.fnGlobal['FOO'] = function( val ) {
+    return 'foo';
 };
 expr.fn['OP'] = function( val ) {
     return '!=' === val ? '<>' : val;

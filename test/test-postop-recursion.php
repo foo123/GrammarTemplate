@@ -28,7 +28,7 @@ echo_();
 <expression2:EXPR>
 
 */
-$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <op:OP>? <rhs|NULL>]][ AND <factor>*])][ OR <term>*]]<expression:EXPR>\n<expression2:EXPR>";
+$tpl = "<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <op:OP>? <rhs|NULL>]][ AND <factor>*])][ OR <term>*]]<expression:EXPR>\n<expression2:EXPR>\n<foo:FOO>?<foo:FOO>\\?<foo:FOO> ?";
 
 function op_func( $val )
 {
@@ -38,8 +38,13 @@ function neg_func( $val )
 {
     return $val ? 'NOT ' : '';
 }
+function foo_func( $val )
+{
+    return 'foo';
+}
 $expr = new GrammarTemplate($tpl, null, true/* post-op mode */);
 GrammarTemplate::$fnGlobal['NEG'] = 'neg_func';
+GrammarTemplate::$fnGlobal['FOO'] = 'foo_func';
 $expr->fn['OP'] = 'op_func';
 
 echo_("input template:");
