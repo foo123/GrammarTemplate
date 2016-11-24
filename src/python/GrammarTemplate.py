@@ -255,7 +255,7 @@ def multisplit( tpl, delims, postop=False ):
                     while (j < jl) and (REPR != tpl[j]):
                         s += tpl[j]
                         j += 1
-                    i = j
+                    i = j+1
                 else:
                     s = ''
                     j = 1

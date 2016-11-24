@@ -337,7 +337,7 @@ class GrammarTemplate
                     {
                         $s = ''; $j = $i+1; $jl = $l;
                         while ( ($j < $jl) && ($REPR !== $tpl[j]) ) $s .= $tpl[$j++];
-                        $i = $j;
+                        $i = $j+1;
                     }
                     else
                     {
