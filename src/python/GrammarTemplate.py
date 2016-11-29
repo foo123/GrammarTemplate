@@ -2,7 +2,7 @@
 #   GrammarTemplate, 
 #   versatile and intuitive grammar-based templating for PHP, Python, Node/XPCOM/JS, ActionScript
 # 
-#   @version: 2.1.0
+#   @version: 2.1.1
 #   https://github.com/foo123/GrammarTemplate
 #
 ##
@@ -177,10 +177,10 @@ def multisplit( tpl, delims, postop=False ):
     i = 0
     while i < l:
         
+        escaped = False
         ch = tpl[i]
-        
         if ESC == ch:
-            escaped = not escaped
+            escaped = True
             i += 1
         
         if IDL == tpl[i:i+lenIDL]:
@@ -188,7 +188,6 @@ def multisplit( tpl, delims, postop=False ):
             
             if escaped:
                 s += IDL
-                escaped = False
                 continue
             
             if len(s):
@@ -202,7 +201,6 @@ def multisplit( tpl, delims, postop=False ):
             
             if escaped:
                 s += IDR
-                escaped = False
                 continue
             
             # argument
@@ -214,15 +212,8 @@ def multisplit( tpl, delims, postop=False ):
                 argument = argument[0:p]
             else:
                 default_value = None
-            not_escd = True
             if postop:
-                c = tpl[i:i+2]
-                if (ESC+OPT == c) or (ESC+OPTR == c) or (ESC+REPL == c):
-                    not_escd = False
-                    i += 1
-                    c = ''
-                else:
-                    c = tpl[i] if i < l else ''
+                c = tpl[i] if i < l else ''
             else:
                 c = argument[0]
             if OPT == c or OPTR == c:
@@ -294,7 +285,7 @@ def multisplit( tpl, delims, postop=False ):
             
             if cur_tpl and (cur_tpl not in arg_tpl): arg_tpl[cur_tpl] = {}
             
-            if not_escd and TPL+OBL == tpl[i:i+lenTPL+lenOBL]:
+            if TPL+OBL == tpl[i:i+lenTPL+lenOBL]:
                 # template definition
                 i += lenTPL
                 template = template if template and len(template) else 'grtpl--'+guid()
@@ -317,11 +308,11 @@ def multisplit( tpl, delims, postop=False ):
                 cur_arg['start'] = start_i
                 cur_arg['end'] = end_i
                 # handle multiple optional arguments for same optional block
-                opt_args = StackEntry(None, [argument,nested,negative,start_i,end_i])
+                opt_args = StackEntry(None, [argument,nested,negative,start_i,end_i,optional])
                 
             elif optional:
                 # handle multiple optional arguments for same optional block
-                opt_args = StackEntry(opt_args, [argument,nested,negative,start_i,end_i])
+                opt_args = StackEntry(opt_args, [argument,nested,negative,start_i,end_i,optional])
             
             elif (not optional) and (cur_arg['name'] is None):
                 cur_arg['name'] = argument
@@ -333,7 +324,7 @@ def multisplit( tpl, delims, postop=False ):
                 cur_arg['start'] = start_i
                 cur_arg['end'] = end_i
                 # handle multiple optional arguments for same optional block
-                opt_args = StackEntry(None, [argument,nested,negative,start_i,end_i])
+                opt_args = StackEntry(None, [argument,nested,negative,start_i,end_i,0])
             
             a = TplEntry({
                 'type'    : 1,
@@ -351,7 +342,6 @@ def multisplit( tpl, delims, postop=False ):
             
             if escaped:
                 s += OBL
-                escaped = False
                 continue
             
             # optional block
@@ -383,7 +373,6 @@ def multisplit( tpl, delims, postop=False ):
             
             if escaped:
                 s += OBR
-                escaped = False
                 continue
             
             b = a
@@ -429,11 +418,8 @@ def multisplit( tpl, delims, postop=False ):
                 }, a)
         
         else:
-            if ESC == ch:
-                s += ch
-            else:
-                s += tpl[i]
-                i += 1
+            s += tpl[i]
+            i += 1
     
     if len(s):
         if 0 == a.node['type']: a.node['val'] += s
@@ -448,14 +434,15 @@ def optional_block( args, block, SUB=None, FN=None, index=None, orig_args=None )
     if -1 == block['type']:
         # optional block, check if optional variables can be rendered
         opt_vars = block['opt_args']
-        if not opt_vars: return ''
-        while opt_vars:
-            opt_v = opt_vars.value
-            opt_arg = walk( args, opt_v[1], [str(opt_v[0])], orig_args )
-            if (block_arg is None) and (block['name'] == opt_v[0]): block_arg = opt_arg
-            
-            if ((0 == opt_v[2]) and (opt_arg is None)) or ((1 == opt_v[2]) and (opt_arg is not None)): return ''
-            opt_vars = opt_vars.prev
+        # if no optional arguments, render block by default
+        if opt_vars and opt_vars.value[5]:
+            while opt_vars:
+                opt_v = opt_vars.value
+                opt_arg = walk( args, opt_v[1], [str(opt_v[0])], orig_args )
+                if (block_arg is None) and (block['name'] == opt_v[0]): block_arg = opt_arg
+                
+                if ((0 == opt_v[2]) and (opt_arg is None)) or ((1 == opt_v[2]) and (opt_arg is not None)): return ''
+                opt_vars = opt_vars.prev
     else:
         block_arg = walk( args, block['key'], [str(block['name'])], orig_args )
     
@@ -540,7 +527,7 @@ class GrammarTemplate:
     https://github.com/foo123/GrammarTemplate
     """
     
-    VERSION = '2.1.0'
+    VERSION = '2.1.1'
     
 
     #defaultDelims = ['<','>','[',']',':=','?','*','!','|','{','}']
