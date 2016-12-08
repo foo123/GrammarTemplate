@@ -59,9 +59,9 @@ function is_array( x )
 {
     return (x instanceof String) || ('[object String]' === toString.call(x));
 }*/
-function compute_alignment( s, end )
+function compute_alignment( s, i, l )
 {
-    var alignment = '', c, i = 0, l = s.length;
+    var alignment = '', c;
     while ( i < l )
     {
         c = s[CHAR](i);
@@ -75,7 +75,6 @@ function compute_alignment( s, end )
             break;
         }
     }
-    //if ( true === end ) alignment += new Array(l-i+1).join(" ");
     return alignment;
 }
 function align( s, alignment )
@@ -213,7 +212,7 @@ function multisplit( tpl, delims, postop )
         roottpl, block, cur_block, prev_arg, prev_opt_args;
     
     postop = true === postop;
-    a = new TplEntry({type: 0, val: ''});
+    a = new TplEntry({type: 0, val: '', algn: ''});
     cur_arg = {
         type    : 1,
         name    : null,
@@ -255,7 +254,7 @@ function multisplit( tpl, delims, postop )
             if ( s.length )
             {
                 if ( 0 === a.node.type ) a.node.val += s;
-                else a = new TplEntry({type: 0, val: s}, a);
+                else a = new TplEntry({type: 0, val: s, algn: ''}, a);
             }
             s = '';
         }
@@ -467,6 +466,7 @@ function multisplit( tpl, delims, postop )
                 // handle multiple optional arguments for same optional block
                 opt_args = new StackEntry(null, [argument,nested,negative,start_i,end_i,0,localised]);
             }
+            if ( 0 === a.node.type ) a.node.algn = compute_alignment(a.node.val, 0, a.node.val.length);
             a = new TplEntry({
                 type    : 1,
                 name    : argument,
@@ -493,7 +493,7 @@ function multisplit( tpl, delims, postop )
             if ( s.length )
             {
                 if ( 0 === a.node.type ) a.node.val += s;
-                else a = new TplEntry({type: 0, val: s}, a);
+                else a = new TplEntry({type: 0, val: s, algn: ''}, a);
             }
             s = '';
             
@@ -503,6 +503,7 @@ function multisplit( tpl, delims, postop )
                 j = i+1; jl = l;
                 while ( (j < jl) && (COMMENT+OBR !== tpl.substr(j,lenOBR+1)) ) s += tpl[CHAR](j++);
                 i = j+lenOBR+1;
+                if ( 0 === a.node.type ) a.node.algn = compute_alignment(a.node.val, 0, a.node.val.length);
                 a = new TplEntry({type: -100, val: s}, a);
                 s = '';
                 continue;
@@ -526,7 +527,7 @@ function multisplit( tpl, delims, postop )
                 end     : 0
             };
             opt_args = null;
-            a = new TplEntry({type: 0, val: ''});
+            a = new TplEntry({type: 0, val: '', algn: ''});
             block = a;
         }
         else if ( OBR === tpl.substr(i,lenOBR) )
@@ -560,7 +561,7 @@ function multisplit( tpl, delims, postop )
             if ( s.length )
             {
                 if ( 0 === b.node.type ) b.node.val += s;
-                else b = new TplEntry({type: 0, val: s}, b);
+                else b = new TplEntry({type: 0, val: s, algn: ''}, b);
             }
             s = '';
             if ( start_tpl )
@@ -580,6 +581,7 @@ function multisplit( tpl, delims, postop )
             }
             else
             {
+                if ( 0 === a.node.type ) a.node.algn = compute_alignment(a.node.val, 0, a.node.val.length);
                 a = new TplEntry({
                     type    : -1,
                     name    : prev_arg.name,
@@ -602,9 +604,10 @@ function multisplit( tpl, delims, postop )
                 if ( s.length )
                 {
                     if ( 0 === a.node.type ) a.node.val += s;
-                    else a = new TplEntry({type: 0, val: s}, a);
+                    else a = new TplEntry({type: 0, val: s, algn: ''}, a);
                 }
                 s = '';
+                if ( 0 === a.node.type ) a.node.algn = compute_alignment(a.node.val, 0, a.node.val.length);
                 a = new TplEntry({type: 100, val: "\n"}, a);
             }
             else
@@ -616,8 +619,9 @@ function multisplit( tpl, delims, postop )
     if ( s.length )
     {
         if ( 0 === a.node.type ) a.node.val += s;
-        else a = new TplEntry({type: 0, val: s}, a);
+        else a = new TplEntry({type: 0, val: s, algn: ''}, a);
     }
+    if ( 0 === a.node.type ) a.node.algn = compute_alignment(a.node.val, 0, a.node.val.length);
     return [roottpl, subtpl];
 }
 
@@ -764,32 +768,30 @@ function non_terminal( args, symbol, SUB, FN, index, alignment, orig_args )
     }
     return out;
 }
-function main( args, tpl, SUB, FN, index, alignment, orig_args)
+function main( args, tpl, SUB, FN, index, alignment, orig_args )
 {
-    var tt, out = '', align = '', s;
     alignment = alignment || '';
-    align = alignment;
+    var tt, current_alignment = alignment, out = '';
     while ( tpl )
     {
         tt = tpl.node.type;
         if ( -1 === tt ) /* optional code-block */
         {
-            out += optional_block( args, tpl.node, SUB, FN, index, align, orig_args );
+            out += optional_block( args, tpl.node, SUB, FN, index, current_alignment, orig_args );
         }
         else if ( 1 === tt ) /* non-terminal */
         {
-            out += non_terminal( args, tpl.node, SUB, FN, index, align, orig_args );
+            out += non_terminal( args, tpl.node, SUB, FN, index, current_alignment, orig_args );
         }
         else if ( 0 === tt ) /* terminal */
         {
-            s = tpl.node.val;
-            align += compute_alignment( s );
-            out += s;
+            current_alignment += tpl.node.algn;
+            out += tpl.node.val;
         }
         else if ( 100 === tt ) /* new line */
         {
+            current_alignment = alignment;
             out += "\n" + alignment;
-            align = alignment;
         }
         /*else if ( -100 === tt ) /* comment * /
         {

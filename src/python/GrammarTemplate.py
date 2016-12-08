@@ -27,10 +27,8 @@ def is_array( v ):
     return isinstance(v, (list,tuple))
     
 
-def compute_alignment( s, end=False ):
+def compute_alignment( s, i, l ):
     alignment = ''
-    i = 0
-    l = len(s)
     while i < l:
         c = s[i]
         if (" " == c) or ("\r" == c) or ("\t" == c) or ("\v" == c) or ("\0" == c):
@@ -38,7 +36,6 @@ def compute_alignment( s, end=False ):
             i += 1
         else:
             break
-    #if end is True: alignment += " ".join([""] * (l-i+1))
     return alignment
 
 def align( s, alignment ):
@@ -189,7 +186,7 @@ def multisplit( tpl, delims, postop=False ):
     l = len(tpl)
     
     postop = postop is True
-    a = TplEntry({'type': 0, 'val': ''})
+    a = TplEntry({'type': 0, 'val': '', 'algn': ''})
     cur_arg = {
         'type'    : 1,
         'name'    : None,
@@ -232,7 +229,7 @@ def multisplit( tpl, delims, postop=False ):
             
             if len(s):
                 if 0 == a.node['type']: a.node['val'] += s
-                else: a = TplEntry({'type': 0, 'val': s}, a)
+                else: a = TplEntry({'type': 0, 'val': s, 'algn': ''}, a)
             s = ''
         
         elif IDR == tpl[i:i+lenIDR]:
@@ -395,6 +392,7 @@ def multisplit( tpl, delims, postop=False ):
                 # handle multiple optional arguments for same optional block
                 opt_args = StackEntry(None, [argument,nested,negative,start_i,end_i,0,localised])
             
+            if 0 == a.node['type']: a.node['algn'] = compute_alignment(a.node['val'], 0, len(a.node['val']))
             a = TplEntry({
                 'type'    : 1,
                 'name'    : argument,
@@ -417,7 +415,7 @@ def multisplit( tpl, delims, postop=False ):
             
             if len(s):
                 if 0 == a.node['type']: a.node['val'] += s
-                else: a = TplEntry({'type': 0, 'val': s}, a)
+                else: a = TplEntry({'type': 0, 'val': s, 'algn': ''}, a)
             s = ''
             
             # comment
@@ -428,6 +426,7 @@ def multisplit( tpl, delims, postop=False ):
                     s += tpl[j]
                     j += 1
                 i = j+lenOBR+1
+                if 0 == a.node['type']: a.node['algn'] = compute_alignment(a.node['val'], 0, len(a.node['val']))
                 a = TplEntry({'type': -100, 'val': s}, a)
                 s = ''
                 continue
@@ -450,7 +449,7 @@ def multisplit( tpl, delims, postop=False ):
                 'end'     : 0
             }
             opt_args = None
-            a = TplEntry({'type': 0, 'val': ''})
+            a = TplEntry({'type': 0, 'val': '', 'algn': ''})
             block = a
         
         elif OBR == tpl[i:i+lenOBR]:
@@ -477,7 +476,7 @@ def multisplit( tpl, delims, postop=False ):
             
             if len(s):
                 if 0 == b.node['type']: b.node['val'] += s
-                else: b = TplEntry({'type': 0, 'val': s}, b)
+                else: b = TplEntry({'type': 0, 'val': s, 'algn': ''}, b)
             s = ''
             
             if start_tpl:
@@ -494,6 +493,7 @@ def multisplit( tpl, delims, postop=False ):
                 })
                 start_tpl = None
             else:
+                if 0 == a.node['type']: a.node['algn'] = compute_alignment(a.node['val'], 0, len(a.node['val']))
                 a = TplEntry({
                     'type'    : -1,
                     'name'    : prev_arg['name'],
@@ -513,16 +513,17 @@ def multisplit( tpl, delims, postop=False ):
                 # note line changes to handle alignments
                 if len(s):
                     if 0 == a.node['type']: a.node['val'] += s
-                    else: a = TplEntry({'type': 0, 'val': s}, a)
+                    else: a = TplEntry({'type': 0, 'val': s, 'algn': ''}, a)
                 s = ''
+                if 0 == a.node['type']: a.node['algn'] = compute_alignment(a.node['val'], 0, len(a.node['val']))
                 a = TplEntry({'type': 100, 'val': "\n"}, a)
             else:
                 s += ch
     
     if len(s):
         if 0 == a.node['type']: a.node['val'] += s
-        else: a = TplEntry({'type': 0, 'val': s}, a)
-    
+        else: a = TplEntry({'type': 0, 'val': s, 'algn': ''}, a)
+    if 0 == a.node['type']: a.node['algn'] = compute_alignment(a.node['val'], 0, len(a.node['val']))
     return [roottpl, subtpl]
 
 def optional_block( args, block, SUB=None, FN=None, index=None, alignment='', orig_args=None ):
@@ -629,20 +630,19 @@ def non_terminal( args, symbol, SUB=None, FN=None, index=None, alignment='', ori
 
 def main( args, tpl, SUB=None, FN=None, index=None, alignment='', orig_args=None ):
     out = ''
-    align = ''+alignment
+    current_alignment = alignment
     while tpl:
         tt = tpl.node['type']
         if -1 == tt: # optional code-block
-            out += optional_block( args, tpl.node, SUB, FN, index, align, orig_args )
+            out += optional_block( args, tpl.node, SUB, FN, index, current_alignment, orig_args )
         elif 1 == tt: # non-terminal
-            out += non_terminal( args, tpl.node, SUB, FN, index, align, orig_args )
+            out += non_terminal( args, tpl.node, SUB, FN, index, current_alignment, orig_args )
         elif 0 == tt: # terminal
-            s = tpl.node['val']
-            align += compute_alignment( s )
-            out += s
+            current_alignment += tpl.node['algn']
+            out += tpl.node['val']
         elif 100 == tt: # new line
+            current_alignment = alignment
             out += "\n" + alignment
-            align = ''+alignment
         #elif -100 == tt: # comment
         #    # pass
         tpl = tpl.next

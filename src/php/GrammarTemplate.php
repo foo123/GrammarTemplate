@@ -64,9 +64,9 @@ class GrammarTemplate
         return false;
     }
     
-    private static function compute_alignment( $s, $end=false )
+    private static function compute_alignment( $s, $i, $l )
     {
-        $alignment = ''; $i = 0; $l = strlen($s);
+        $alignment = '';
         while ( $i < $l )
         {
             $c = $s[$i];
@@ -80,7 +80,6 @@ class GrammarTemplate
                 break;
             }
         }
-        //if ( true === $end ) $alignment .= implode(" ", array_repeat("", $l-$i+1));
         return $alignment;
     }
     
@@ -254,7 +253,7 @@ class GrammarTemplate
         $l = strlen($tpl);
         
         $postop = true === $postop;
-        $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> ''));
+        $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> '', 'algn'=> ''));
         $cur_arg = (object)array(
             'type'    => 1,
             'name'    => null,
@@ -296,7 +295,7 @@ class GrammarTemplate
                 if ( strlen($s) )
                 {
                     if ( 0 === $a->node->type ) $a->node->val .= $s;
-                    else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s), $a);
+                    else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s, 'algn'=> ''), $a);
                 }
                 
                 $s = '';
@@ -508,6 +507,7 @@ class GrammarTemplate
                     // handle multiple optional arguments for same optional block
                     $opt_args = new GrammarTemplate__StackEntry(null, array($argument,$nested,$negative,$start_i,$end_i,0,$localised));
                 }
+                if ( 0 === $a->node->type ) $a->node->algn = self::compute_alignment($a->node->val, 0, strlen($a->node->val));
                 $a = new GrammarTemplate__TplEntry((object)array(
                     'type'    => 1,
                     'name'    => $argument,
@@ -534,7 +534,7 @@ class GrammarTemplate
                 if ( strlen($s) )
                 {
                     if ( 0 === $a->node->type ) $a->node->val .= $s;
-                    else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s), $a);
+                    else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s, 'algn'=> ''), $a);
                 }
                 $s = '';
                 
@@ -544,6 +544,7 @@ class GrammarTemplate
                     $j = $i+1; $jl = $l;
                     while ( ($j < $jl) && ($COMMENT.$OBR !== substr($tpl,$j,$lenOBR+1)) ) $s .= $tpl[$j++];
                     $i = $j+$lenOBR+1;
+                    if ( 0 === $a->node->type ) $a->node->algn = self::compute_alignment($a->node->val, 0, strlen($a->node->val));
                     $a = new GrammarTemplate__TplEntry((object)array('type'=> -100, 'val'=> $s), $a);
                     $s = '';
                     continue;
@@ -567,7 +568,7 @@ class GrammarTemplate
                     'end'     => 0
                 );
                 $opt_args = null;
-                $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> ''));
+                $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> '', 'algn'=> ''));
                 $block = $a;
             }
             else if ( $OBR === substr($tpl,$i,$lenOBR) )
@@ -601,7 +602,7 @@ class GrammarTemplate
                 if ( strlen($s) )
                 {
                     if ( 0 === $b->node->type ) $b->node->val .= $s;
-                    else $b = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s), $b);
+                    else $b = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s, 'algn'=> ''), $b);
                 }
                 
                 $s = '';
@@ -622,6 +623,7 @@ class GrammarTemplate
                 }
                 else
                 {
+                    if ( 0 === $a->node->type ) $a->node->algn = self::compute_alignment($a->node->val, 0, strlen($a->node->val));
                     $a = new GrammarTemplate__TplEntry((object)array(
                         'type'    => -1,
                         'name'    => $prev_arg->name,
@@ -644,9 +646,10 @@ class GrammarTemplate
                     if ( strlen($s) )
                     {
                         if ( 0 === $a->node->type ) $a->node->val .= $s;
-                        else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s), $a);
+                        else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s, 'algn'=> ''), $a);
                     }
                     $s = '';
+                    if ( 0 === $a->node->type ) $a->node->algn = self::compute_alignment($a->node->val, 0, strlen($a->node->val));
                     $a = new GrammarTemplate__TplEntry((object)array('type'=> 100, 'val'=> "\n"), $a);
                 }
                 else
@@ -658,8 +661,9 @@ class GrammarTemplate
         if ( strlen($s) )
         {
             if ( 0 === $a->node->type ) $a->node->val .= $s;
-            else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s), $a);
+            else $a = new GrammarTemplate__TplEntry((object)array('type'=> 0, 'val'=> $s, 'algn'=> ''), $a);
         }
+        if ( 0 === $a->node->type ) $a->node->algn = self::compute_alignment($a->node->val, 0, strlen($a->node->val));
         return array($roottpl, &$subtpl);
     }
 
@@ -803,28 +807,27 @@ class GrammarTemplate
     public static function main( $args, $tpl, &$SUB=null, &$FN=null, $index=null, $alignment='', $orig_args=null )
     {
         $out = '';
-        $align = $alignment;
+        $current_alignment = $alignment;
         while ( $tpl )
         {
             $tt = $tpl->node->type;
             if ( -1 === $tt ) /* optional code-block */
             {
-                $out .= self::optional_block( $args, $tpl->node, $SUB, $FN, $index, $align, $orig_args );
+                $out .= self::optional_block( $args, $tpl->node, $SUB, $FN, $index, $current_alignment, $orig_args );
             }
             elseif ( 1 === $tt ) /* non-terminal */
             {
-                $out .= self::non_terminal( $args, $tpl->node, $SUB, $FN, $index, $align, $orig_args );
+                $out .= self::non_terminal( $args, $tpl->node, $SUB, $FN, $index, $current_alignment, $orig_args );
             }
             elseif ( 0 === $tt ) /* terminal */
             {
-                $s = $tpl->node->val;
-                $align .= self::compute_alignment( $s );
-                $out .= $s;
+                $current_alignment .= $tpl->node->algn;
+                $out .= $tpl->node->val;
             }
             elseif ( 100 === $tt ) /* new line */
             {
+                $current_alignment = $alignment;
                 $out .= "\n" . $alignment;
-                $align = $alignment;
             }
             /*elseif ( -100 === $tt ) /* comment * /
             {
