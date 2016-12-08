@@ -1,4 +1,4 @@
-GrammarTemplate.VERSION = 2.1.0
+GrammarTemplate.VERSION = 3.0.0
 
 input template:
 <:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>

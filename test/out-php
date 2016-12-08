@@ -1,4 +1,4 @@
-GrammarTemplate.VERSION = 2.0.0
+GrammarTemplate.VERSION = 3.0.0
 
 input template:
 SELECT <column.select>[, <*column.select>]

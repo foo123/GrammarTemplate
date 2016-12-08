@@ -10,7 +10,7 @@
 [Etymology of *"template"*](http://www.etymonline.com/index.php?term=template)
 
 
-**light-weight (~5.5kB minified, ~2.4kB zipped)**
+**light-weight (~7.7kB minified, ~3.2kB zipped)**
 
 * `GrammarTemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins)
 
@@ -18,6 +18,8 @@
 **version 3.0.0** [GrammarTemplate.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.js), [GrammarTemplate.min.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.min.js)
 
 [Live Playground Example](https://foo123.github.io/examples/grammar-template)
+
+[![GrammarTemplate Editor](/grammartemplate-editor.png)](https://foo123.github.io/examples/grammar-template)
 
 
 **see also:**  
@@ -73,20 +75,20 @@ echo(sql.render({
 
 **output**
 ```text
-GrammarTemplate.VERSION = 2.0.0
+GrammarTemplate.VERSION = 3.0.0
 
 input template:
 SELECT <column.select>[, <*column.select>]
-FROM <table.from>[, <*table.from>]
-[WHERE (<?required.where>) AND (<?condition.where>)]
-[WHERE <?required.where><?!condition.where>]
-[WHERE <?!required.where><?condition.where>]
-[GROUP BY <?group>[, <*group>]]
-[HAVING (<?required.having>) AND (<?condition.having>)]
-[HAVING <?required.having><?!condition.having>]
-[HAVING <?!required.having><?condition.having>]
-[ORDER BY <?order>[, <*order>]]
-[LIMIT <offset|0>, <?count>]
+FROM <table.from>[, <*table.from>][
+WHERE (<?required.where>) AND (<?condition.where>)][
+WHERE <?required.where><?!condition.where>][
+WHERE <?!required.where><?condition.where>][
+GROUP BY <?group>[, <*group>]][
+HAVING (<?required.having>) AND (<?condition.having>)][
+HAVING <?required.having><?!condition.having>][
+HAVING <?!required.having><?condition.having>][
+ORDER BY <?order>[, <*order>]][
+LIMIT <offset|0>, <?count>]
 
 output:
 SELECT field1, field2, field3, field4
@@ -94,7 +96,6 @@ FROM tbl1, tbl2
 WHERE field1=1 AND field2=2
 HAVING field3=1 OR field4=2
 LIMIT 0, 5
-
 ```
 
 ```javascript
@@ -203,16 +204,127 @@ echo(expr.render({
 ```
 **output**
 ```text
-GrammarTemplate.VERSION = 2.0.0
+GrammarTemplate.VERSION = 3.0.0
 
 input template:
-<:EXPR>:=[<term>:=[(<factor>:=[<lhs>[ <?op> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]
-<expression:EXPR>
+<:EXPR>:=[<term>:=[(<factor>:=[<globalNegation:NEG><lhs>[ <?op:OP> <rhs|NULL>]][ AND <*factor>])][ OR <*term>]]<expression:EXPR>
 <expression2:EXPR>
 
 output:
-(1 = 1 AND 1 = 2 AND 1 = 3) OR (1 < 1 AND 1 < 2 AND 1 < 3) OR (1 > 1 AND 1 > 2 AND 1 > 3)
-(2 = 1 AND 2 = 2 AND 2 = 3) OR (2 < 1 AND 2 < 2 AND 2 < 3) OR (2 > 1 AND 2 > 2 AND 2 > 3) OR (3 AND 3 != NULL)
+(NOT 1 = 1 AND NOT 1 = 2 AND NOT 1 = 3) OR (NOT 1 < 1 AND NOT 1 < 2 AND NOT 1 < 3) OR (NOT 1 > 1 AND NOT 1 > 2 AND NOT 1 > 3)
+(NOT 2 = 1 AND NOT 2 = 2 AND NOT 2 = 3) OR (NOT 2 < 1 AND NOT 2 < 2 AND NOT 2 < 3) OR (NOT 2 > 1 AND NOT 2 > 2 AND NOT 2 > 3) OR (NOT 3 AND NOT 3 <> NULL)
+```
+
+```javascript
+var GrammarTemplate = require("../src/js/GrammarTemplate.js"), echo = console.log;
+
+echo('GrammarTemplate.VERSION = ' + GrammarTemplate.VERSION);
+echo( );
+
+var tpl = "<:BLOCK>:=[BLOCK <.name>\n{\n[    <@.blocks:BLOCKS>?\n]}]<:BLOCKS>:=[<@block:BLOCK>[\n<@block:BLOCK>*]]<@blocks:BLOCKS>";
+
+var aligned = new GrammarTemplate( tpl, null, true );
+
+echo("input template:");
+echo(tpl);
+
+echo( );
+
+echo("output:");
+echo(aligned.render({
+    blocks      : [
+    {
+        name        : "block1",
+        blocks      : null
+    },
+    {
+        name        : "block2",
+        blocks      : [
+            {
+                name   : "block21",
+                blocks : [
+                    {
+                        name   : "block211",
+                        blocks : [
+                            {
+                                name   : "block2111",
+                                blocks : null
+                            },
+                            {
+                                name   : "block2112"
+                            }
+                        ]
+                    },
+                    {
+                        name   : "block212"
+                    }
+                ]
+            },
+            {
+                name   : "block22",
+                blocks : [
+                    {
+                        name   : "block221"
+                    },
+                    {
+                        name   : "block222"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        name        : "block3"
+    }
+]
+}));
+```
+
+
+```text
+GrammarTemplate.VERSION = 3.0.0
+
+input template:
+<:BLOCK>:=[BLOCK <.name>
+{
+[    <@.blocks:BLOCKS>?
+]}]<:BLOCKS>:=[<@block:BLOCK>[
+<@block:BLOCK>*]]<@blocks:BLOCKS>
+
+output:
+BLOCK block1
+{
+}
+BLOCK block2
+{
+    BLOCK block21
+    {
+        BLOCK block211
+        {
+            BLOCK block2111
+            {
+            }
+            BLOCK block2112
+            {
+            }
+        }
+        BLOCK block212
+        {
+        }
+    }
+    BLOCK block22
+    {
+        BLOCK block221
+        {
+        }
+        BLOCK block222
+        {
+        }
+    }
+}
+BLOCK block3
+{
+}
 ```
 
 ###TODO

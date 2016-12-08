@@ -32,13 +32,7 @@ var PROTO = 'prototype',
         ? function( s ){ return s.trim(); }
         : function( s ){ return s.replace(trim_re, ''); }
 ;
-/*function echo( x, t )
-{
-    if ( t <= echo.times ) return;
-    echo.times++;
-    console.log(is_string(x) ? x : JSON.stringify(x, null, 2));
-}
-echo.times = 0;*/
+
 function HAS( o, x )
 {
     return o && hasOwnProperty.call(o, x) ? 1 : 0;
@@ -53,17 +47,18 @@ function pad( s, n, z, pad_right )
 }
 function guid( )
 {
-    return pad(new Date().getTime().toString(16),12)+'--'+pad((++guid.GUID).toString(16),4);
+    guid.GUID += 1;
+    return pad(new Date().getTime().toString(16),12)+'--'+pad(guid.GUID.toString(16),4);
 }
 guid.GUID = 0;
 function is_array( x )
 {
     return (x instanceof Array) || ('[object Array]' === toString.call(x));
 }
-function is_string( x )
+/*function is_string( x )
 {
     return (x instanceof String) || ('[object String]' === toString.call(x));
-}
+}*/
 function compute_alignment( s, end )
 {
     var alignment = '', c, i = 0, l = s.length;
@@ -80,7 +75,7 @@ function compute_alignment( s, end )
             break;
         }
     }
-    if ( end ) alignment += new Array(l-i+1).join(" ");
+    //if ( true === end ) alignment += new Array(l-i+1).join(" ");
     return alignment;
 }
 function align( s, alignment )
@@ -576,8 +571,8 @@ function multisplit( tpl, delims, postop )
                     key     : prev_arg.key,
                     loc     : prev_arg.loc,
                     algn    : prev_arg.algn,
-                    start   : 0/*cur_arg.start*/,
-                    end     : 0/*cur_arg.end*/,
+                    start   : prev_arg.start,
+                    end     : prev_arg.end,
                     opt_args: null/*opt_args*/,
                     tpl     : cur_block
                 });
@@ -657,7 +652,7 @@ function optional_block( args, block, SUB, FN, index, alignment, orig_args )
     }
     
     arr = is_array( block_arg ); len = arr ? block_arg.length : -1;
-    //alignment = block.algn ? alignment : '';
+    //if ( !block.algn ) alignment = '';
     if ( arr && (len > block.start) )
     {
         for(rs=block.start,re=(-1===block.end?len-1:Math.min(block.end,len-1)),ri=rs; ri<=re; ri++)
@@ -688,7 +683,7 @@ function non_terminal( args, symbol, SUB, FN, index, alignment, orig_args )
             // sub-template
             if ( (null != index) && ((0 !== index) || (symbol.start !== symbol.end) || !symbol.opt) && is_array(opt_arg) )
             {
-                opt_arg = opt_arg[ index ];
+                opt_arg = index < opt_arg.length ? opt_arg[ index ] : null;
             }
             
             if ( (null == opt_arg) && (null !== symbol.dval) )
@@ -709,8 +704,8 @@ function non_terminal( args, symbol, SUB, FN, index, alignment, orig_args )
                     else tpl_args = opt_arg;
                 }
                 out = optional_block( tpl_args, tpl, SUB, FN, null, symbol.algn ? alignment : '', null == orig_args ? args : orig_args );
+                //if ( symbol.algn ) out = align(out, alignment);
             }
-            //if ( symbol.algn ) out = align(out, alignment);
         }
         else //if ( fn )
         {
@@ -724,7 +719,7 @@ function non_terminal( args, symbol, SUB, FN, index, alignment, orig_args )
             if ( is_array(opt_arg) )
             {
                 index = null != index ? index : symbol.start;
-                opt_arg = index < opt_arg.length ? opt_arg[index] : null;
+                opt_arg = index < opt_arg.length ? opt_arg[ index ] : null;
             }
             
             if ( "function" === typeof fn )
@@ -762,7 +757,7 @@ function non_terminal( args, symbol, SUB, FN, index, alignment, orig_args )
         if ( is_array(opt_arg) )
         {
             index = null != index ? index : symbol.start;
-            opt_arg = index < opt_arg.length ? opt_arg[index] : null;
+            opt_arg = index < opt_arg.length ? opt_arg[ index ] : null;
         }
         out = (null == opt_arg) && (null !== symbol.dval) ? symbol.dval : String(opt_arg);
         if ( symbol.algn ) out = align(out, alignment);
