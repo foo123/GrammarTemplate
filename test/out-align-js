@@ -1,0 +1,43 @@
+GrammarTemplate.VERSION = 3.0.0
+
+input template:
+<:BLOCK>:=[BLOCK <.name>
+{
+[    <@.blocks:BLOCKS>?
+]}]<:BLOCKS>:=[<@block:BLOCK>[
+<@block:BLOCK>*]]<@blocks:BLOCKS>
+
+output:
+BLOCK block1
+{
+}
+BLOCK block2
+{
+    BLOCK block21
+    {
+        BLOCK block211
+        {
+            BLOCK block2111
+            {
+            }
+            BLOCK block2112
+            {
+            }
+        }
+        BLOCK block212
+        {
+        }
+    }
+    BLOCK block22
+    {
+        BLOCK block221
+        {
+        }
+        BLOCK block222
+        {
+        }
+    }
+}
+BLOCK block3
+{
+}

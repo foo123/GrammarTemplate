@@ -15,7 +15,7 @@
 * `GrammarTemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins)
 
 
-**version 2.1.1** [GrammarTemplate.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.js), [GrammarTemplate.min.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.min.js)
+**version 3.0.0** [GrammarTemplate.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.js), [GrammarTemplate.min.js](https://raw.githubusercontent.com/foo123/GrammarTemplate/master/src/js/GrammarTemplate.min.js)
 
 [Live Playground Example](https://foo123.github.io/examples/grammar-template)
 
@@ -224,3 +224,7 @@ output:
 * optimise parsing and rendering [DONE]
 * support some basic and/or user-defined functions [DONE, similar custom function definition as custom sub-template, calls function if custom function with same name has been defined]
 * support both `pre-` and `post-` (repeat) grammar operators, i.e both `<?symbol>`,`<*symbol>`,`<{n,m}symbol>` and `<symbol>?`,`<symbol>*`,`<symbol>{n,m}` for more familiar grammar syntax [DONE, via extra parameter in template instantiation]
+* support comments [DONE, through comment block notation, i.e `[# comment here #]`]
+* handle generic/dynamic unknown before-hand custom rendering methods [DONE, can attach to generic wildcard renderer `*` and handle/dispatch based on passed template name]
+* handle same name local and global arguments in (deep) recursive templates, avoiding possible global conflicts and infinite loops [DONE, through explicit local dot `.` argument notation]
+* handle explicit text/code alignment/indentation expansion in sequence [DONE, use aligned `@` argument notation]
