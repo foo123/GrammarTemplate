@@ -634,9 +634,9 @@ def main( args, tpl, SUB=None, FN=None, index=None, alignment='', orig_args=None
     while tpl:
         tt = tpl.node['type']
         if -1 == tt: # optional code-block
-            out += optional_block( args, tpl.node, SUB, FN, index, current_alignment, orig_args )
+            out += optional_block( args, tpl.node, SUB, FN, index, current_alignment if tpl.node['algn'] else alignment, orig_args )
         elif 1 == tt: # non-terminal
-            out += non_terminal( args, tpl.node, SUB, FN, index, current_alignment, orig_args )
+            out += non_terminal( args, tpl.node, SUB, FN, index, current_alignment if tpl.node['algn'] else alignment, orig_args )
         elif 0 == tt: # terminal
             current_alignment += tpl.node['algn']
             out += tpl.node['val']

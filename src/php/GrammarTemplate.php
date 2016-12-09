@@ -813,11 +813,11 @@ class GrammarTemplate
             $tt = $tpl->node->type;
             if ( -1 === $tt ) /* optional code-block */
             {
-                $out .= self::optional_block( $args, $tpl->node, $SUB, $FN, $index, $current_alignment, $orig_args );
+                $out .= self::optional_block( $args, $tpl->node, $SUB, $FN, $index, $tpl->node->algn ? $current_alignment : $alignment, $orig_args );
             }
             elseif ( 1 === $tt ) /* non-terminal */
             {
-                $out .= self::non_terminal( $args, $tpl->node, $SUB, $FN, $index, $current_alignment, $orig_args );
+                $out .= self::non_terminal( $args, $tpl->node, $SUB, $FN, $index, $tpl->node->algn ? $current_alignment : $alignment, $orig_args );
             }
             elseif ( 0 === $tt ) /* terminal */
             {

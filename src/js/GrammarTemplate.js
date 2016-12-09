@@ -777,11 +777,11 @@ function main( args, tpl, SUB, FN, index, alignment, orig_args )
         tt = tpl.node.type;
         if ( -1 === tt ) /* optional code-block */
         {
-            out += optional_block( args, tpl.node, SUB, FN, index, current_alignment, orig_args );
+            out += optional_block( args, tpl.node, SUB, FN, index, tpl.node.algn ? current_alignment : alignment, orig_args );
         }
         else if ( 1 === tt ) /* non-terminal */
         {
-            out += non_terminal( args, tpl.node, SUB, FN, index, current_alignment, orig_args );
+            out += non_terminal( args, tpl.node, SUB, FN, index, tpl.node.algn ? current_alignment : alignment, orig_args );
         }
         else if ( 0 === tt ) /* terminal */
         {
