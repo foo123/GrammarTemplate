@@ -32,7 +32,7 @@ def compute_alignment( s, i, l ):
     while i < l:
         c = s[i]
         if (" " == c) or ("\r" == c) or ("\t" == c) or ("\v" == c) or ("\0" == c):
-            alignment += str(c)
+            alignment += c
             i += 1
         else:
             break
@@ -43,7 +43,7 @@ def align( s, alignment ):
     if l and len(alignment):
         aligned = '';
         for c in s:
-            aligned += str(c)
+            aligned += c
             if "\n" == c: aligned += alignment
     else:
         aligned = s
@@ -160,24 +160,24 @@ def multisplit( tpl, delims, postop=False ):
     IDR = delims[1]
     OBL = delims[2]
     OBR = delims[3]
-    TPL = delims[4]
     lenIDL = len(IDL)
     lenIDR = len(IDR)
     lenOBL = len(OBL)
     lenOBR = len(OBR)
-    lenTPL = len(TPL)
     ESC = '\\'
     OPT = '?'
     OPTR = '*'
     NEG = '!'
     DEF = '|'
     COMMENT = '#'
+    TPL = ':='
     REPL = '{'
     REPR = '}'
     DOT = '.'
     REF = ':'
     ALGN = '@'
     #NOTALGN = '&'
+    COMMENT_CLOSE = COMMENT+OBR
     default_value = None
     negative = 0
     optional = 0
@@ -185,6 +185,10 @@ def multisplit( tpl, delims, postop=False ):
     localised = 0
     l = len(tpl)
     
+    delim1 = [IDL, lenIDL, IDR, lenIDR]
+    delim2 = [OBL, lenOBL, OBR, lenOBR]
+    delim_order = [None,0,None,0,None,0,None,0]
+
     postop = postop is True
     a = TplEntry({'type': 0, 'val': '', 'algn': ''})
     cur_arg = {
@@ -207,37 +211,78 @@ def multisplit( tpl, delims, postop=False ):
     cur_tpl = None
     arg_tpl = {}
     start_tpl = None
+    
+    # hard-coded merge-sort for arbitrary delims parsing based on str len
+    if delim1[1] < delim1[3]:
+        s = delim1[0]
+        delim1[2] = delim1[0]
+        delim1[0] = s
+        i = delim1[1]
+        delim1[3] = delim1[1]
+        delim1[1] = i
+    if delim2[1] < delim2[3]:
+        s = delim2[0]
+        delim2[2] = delim2[0]
+        delim2[0] = s
+        i = delim2[1]
+        delim2[3] = delim2[1]
+        delim2[1] = i
+    start_i = 0
+    end_i = 0
+    i = 0
+    while (4 > start_i) and (4 > end_i):
+        if delim1[start_i+1] < delim2[end_i+1]:
+            delim_order[i] = delim2[end_i]
+            delim_order[i+1] = delim2[end_i+1]
+            end_i += 2
+        else:
+            delim_order[i] = delim1[start_i]
+            delim_order[i+1] = delim1[start_i+1]
+            start_i += 2
+        i += 2
+    while 4 > start_i:
+        delim_order[i] = delim1[start_i]
+        delim_order[i+1] = delim1[start_i+1]
+        start_i += 2
+        i += 2
+    while 4 > end_i:
+        delim_order[i] = delim2[end_i]
+        delim_order[i+1] = delim2[end_i+1]
+        end_i += 2
+        i += 2
+    
     stack = None
     s = ''
-    escaped = False
     
     i = 0
     while i < l:
         
-        escaped = False
-        ch = tpl[i]
-        if ESC == ch:
-            escaped = True
-            i += 1
+        c = tpl[i]
+        if ESC == c:
+            s += tpl[i+1] if i+1 < l else ''
+            i += 2
+            continue
         
-        if IDL == tpl[i:i+lenIDL]:
+        delim = None
+        if delim_order[0] == tpl[i:i+delim_order[1]]:
+            delim = delim_order[0]
+        elif delim_order[2] == tpl[i:i+delim_order[3]]:
+            delim = delim_order[2]
+        elif delim_order[4] == tpl[i:i+delim_order[5]]:
+            delim = delim_order[4]
+        elif delim_order[6] == tpl[i:i+delim_order[7]]:
+            delim = delim_order[6]
+        
+        if IDL == delim:
             i += lenIDL
-            
-            if escaped:
-                s += IDL
-                continue
             
             if len(s):
                 if 0 == a.node['type']: a.node['val'] += s
                 else: a = TplEntry({'type': 0, 'val': s, 'algn': ''}, a)
             s = ''
         
-        elif IDR == tpl[i:i+lenIDR]:
+        elif IDR == delim:
             i += lenIDR
-            
-            if escaped:
-                s += IDR
-                continue
             
             # argument
             argument = s
@@ -335,9 +380,9 @@ def multisplit( tpl, delims, postop=False ):
             
             if cur_tpl and (cur_tpl not in arg_tpl): arg_tpl[cur_tpl] = {}
             
-            if TPL+OBL == tpl[i:i+lenTPL+lenOBL]:
+            if TPL+OBL == tpl[i:i+2+lenOBL]:
                 # template definition
-                i += lenTPL
+                i += 2
                 template = template if template and len(template) else 'grtpl--'+guid()
                 start_tpl = template
                 if cur_tpl and len(argument):
@@ -406,12 +451,8 @@ def multisplit( tpl, delims, postop=False ):
                 'end'     : end_i
             }, a)
         
-        elif OBL == tpl[i:i+lenOBL]:
+        elif OBL == delim:
             i += lenOBL
-            
-            if escaped:
-                s += OBL
-                continue
             
             if len(s):
                 if 0 == a.node['type']: a.node['val'] += s
@@ -422,7 +463,7 @@ def multisplit( tpl, delims, postop=False ):
             if COMMENT == tpl[i]:
                 j = i+1
                 jl = l
-                while (j < jl) and (COMMENT+OBR != tpl[j:lenOBR+1]):
+                while (j < jl) and (COMMENT_CLOSE != tpl[j:j+lenOBR+1]):
                     s += tpl[j]
                     j += 1
                 i = j+lenOBR+1
@@ -452,12 +493,8 @@ def multisplit( tpl, delims, postop=False ):
             a = TplEntry({'type': 0, 'val': '', 'algn': ''})
             block = a
         
-        elif OBR == tpl[i:i+lenOBR]:
+        elif OBR == delim:
             i += lenOBR
-            
-            if escaped:
-                s += OBR
-                continue
             
             b = a
             cur_block = block
@@ -507,9 +544,9 @@ def multisplit( tpl, delims, postop=False ):
                 }, a)
         
         else:
-            ch = tpl[i]
+            c = tpl[i]
             i += 1
-            if "\n" == ch:
+            if "\n" == c:
                 # note line changes to handle alignments
                 if len(s):
                     if 0 == a.node['type']: a.node['val'] += s
@@ -518,7 +555,7 @@ def multisplit( tpl, delims, postop=False ):
                 if 0 == a.node['type']: a.node['algn'] = compute_alignment(a.node['val'], 0, len(a.node['val']))
                 a = TplEntry({'type': 100, 'val': "\n"}, a)
             else:
-                s += ch
+                s += c
     
     if len(s):
         if 0 == a.node['type']: a.node['val'] += s
@@ -658,8 +695,7 @@ class GrammarTemplate:
     VERSION = '3.0.0'
     
 
-    #defaultDelims = ['<','>','[',']',':=','?','*','!','|','{','}']
-    defaultDelims = ['<','>','[',']',':=']
+    defaultDelimiters = ['<','>','[',']']
     fnGlobal = {}
     subGlobal = {}
     guid = guid
@@ -672,7 +708,7 @@ class GrammarTemplate:
         self.tpl = None
         self.fn = {}
         # lazy init
-        self._args = [ tpl, delims if delims else GrammarTemplate.defaultDelims, postop ]
+        self._args = [ tpl, delims if delims else GrammarTemplate.defaultDelimiters, postop ]
 
     def __del__(self):
         self.dispose()

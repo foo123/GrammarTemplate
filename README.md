@@ -340,3 +340,4 @@ BLOCK block3
 * handle generic/dynamic unknown before-hand custom rendering methods [DONE, can attach to generic wildcard renderer `*` and handle/dispatch based on passed template name]
 * handle same name local and global arguments in (deep) recursive templates, avoiding possible global conflicts and infinite loops [DONE, through explicit local dot `.` argument notation]
 * handle explicit text/code alignment/indentation expansion in sequence [DONE, use aligned `@` argument notation]
+* handle custom delimiters with different lengths and possibly same prefixes [DONE, by dynamicaly arranging parsing by delimiter string length]
