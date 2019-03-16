@@ -61,7 +61,7 @@ def walk( obj, keys, keys_alt=None, obj_alt=None ):
             i += 1
             if o is not None:
                 if isinstance(o,(list,tuple)) and int(k)<len(o):
-                    o = o[k]
+                    o = o[int(k)]
                 elif isinstance(o,dict) and (k in o):
                     o = o[k]
                 else:
@@ -83,7 +83,7 @@ def walk( obj, keys, keys_alt=None, obj_alt=None ):
             i += 1
             if o is not None:
                 if isinstance(o,(list,tuple)) and int(k)<len(o):
-                    o = o[k]
+                    o = o[int(k)]
                 elif isinstance(o,dict) and (k in o):
                     o = o[k]
                 else:
@@ -106,7 +106,7 @@ def walk( obj, keys, keys_alt=None, obj_alt=None ):
                 i += 1
                 if o is not None:
                     if isinstance(o,(list,tuple)) and int(k)<len(o):
-                        o = o[k]
+                        o = o[int(k)]
                     elif isinstance(o,dict) and (k in o):
                         o = o[k]
                     else:
@@ -128,7 +128,7 @@ def walk( obj, keys, keys_alt=None, obj_alt=None ):
                 i += 1
                 if o is not None:
                     if isinstance(o,(list,tuple)) and int(k)<len(o):
-                        o = o[k]
+                        o = o[int(k)]
                     elif isinstance(o,dict) and (k in o):
                         o = o[k]
                     else:
